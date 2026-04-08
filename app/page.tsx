@@ -6,7 +6,7 @@ type Place = {
   name: string;
   category: string;
   image: string;
-  fallback: string;
+  fallback?: string;
   description: string;
   effort: string;
   duration: string;
@@ -18,145 +18,278 @@ type Place = {
 };
 
 const places: Place[] = [
+  // 🏆 IMPERDIBLES
   {
     name: "San Diego Zoo",
     category: "Imperdible",
-    image:
-      "https://images.unsplash.com/photo-1546182990-dffeafbe841d?auto=format&fit=crop&w=1200&q=80",
-    fallback:
-      "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80",
+    image: "/images/san-diego-zoo.jpg",
     description:
-      "Zoológico de clase mundial con gran biodiversidad y recorridos amplios. Excelente para adultos y niños, aunque implica bastante caminata.",
+      "Zoológico de clase mundial con hábitats abiertos, gran biodiversidad y teleférico interno. Ideal para recorrer en familia, aunque exige caminata constante.",
     effort: "Alto",
     duration: "4–6 h",
     adult: "$70–80",
     child: "$60–70",
-    address: "2920 Zoo Dr, San Diego, CA 92101",
-    maps: "https://www.google.com/maps/search/?api=1&query=2920+Zoo+Dr%2C+San+Diego%2C+CA+92101",
+    address: "2920 Zoo Dr, San Diego, CA",
+    maps: "https://www.google.com/maps/search/?api=1&query=San+Diego+Zoo",
     site: "https://zoo.sandiegozoo.org",
   },
   {
     name: "SeaWorld San Diego",
     category: "Imperdible",
-    image:
-      "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80",
-    fallback:
-      "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80",
+    image: "/images/seaworld-san-diego.jpg",
     description:
-      "Parque marino con shows, atracciones y áreas familiares. Muy completo para un grupo con niño pequeño y adultos.",
+      "Parque marino con shows de animales, montañas rusas y áreas infantiles. Muy equilibrado entre entretenimiento y educación.",
     effort: "Medio",
     duration: "4–6 h",
     adult: "$80–100",
     child: "$70–90",
-    address: "500 Sea World Dr, San Diego, CA 92109",
-    maps: "https://www.google.com/maps/search/?api=1&query=500+Sea+World+Dr%2C+San+Diego%2C+CA+92109",
+    address: "500 Sea World Dr, San Diego, CA",
+    maps: "https://www.google.com/maps/search/?api=1&query=SeaWorld+San+Diego",
     site: "https://seaworld.com/san-diego",
   },
   {
     name: "USS Midway Museum",
     category: "Imperdible",
-    image:
-      "https://images.unsplash.com/photo-1518544866330-95a4f8ad5e79?auto=format&fit=crop&w=1200&q=80",
-    fallback:
-      "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=1200&q=80",
+    image: "/images/uss-midway-museum.jpg",
     description:
-      "Portaaviones histórico convertido en museo interactivo. Muy atractivo para quienes disfrutan historia, aviones y experiencias distintas.",
+      "Portaaviones histórico convertido en museo interactivo. Permite explorar cabinas, cubierta y aviones reales. Muy atractivo para adultos y niños curiosos.",
     effort: "Medio",
     duration: "2–3 h",
-    adult: "$30–40",
-    child: "$20–30",
-    address: "910 N Harbor Dr, San Diego, CA 92101",
-    maps: "https://www.google.com/maps/search/?api=1&query=910+N+Harbor+Dr%2C+San+Diego%2C+CA+92101",
-    site: "https://www.midway.org",
+    adult: "$30",
+    child: "$20",
+    address: "910 N Harbor Dr, San Diego, CA",
+    maps: "https://www.google.com/maps/search/?api=1&query=USS+Midway+Museum",
+    site: "https://midway.org",
   },
   {
     name: "Balboa Park",
     category: "Imperdible",
-    image:
-      "https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1200&q=80",
-    fallback:
-      "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80",
+    image: "/images/balboa-park.jpg",
     description:
-      "Complejo cultural con jardines, plazas, arquitectura icónica y museos. Perfecto para un día flexible con poco cansancio.",
+      "Complejo cultural con jardines, arquitectura histórica y múltiples museos. Ideal para paseos tranquilos o visitas parciales.",
     effort: "Bajo",
     duration: "2–5 h",
     adult: "Gratis",
     child: "Gratis",
-    address: "1549 El Prado, San Diego, CA 92101",
-    maps: "https://www.google.com/maps/search/?api=1&query=1549+El+Prado%2C+San+Diego%2C+CA+92101",
+    address: "1549 El Prado, San Diego, CA",
+    maps: "https://www.google.com/maps/search/?api=1&query=Balboa+Park",
     site: "https://balboapark.org",
   },
+
+  // 👨‍👩‍👧‍👦 FAMILIA / NIÑOS
   {
-    name: "Old Town San Diego",
-    category: "Cultural",
-    image:
-      "https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=1200&q=80",
-    fallback:
-      "https://images.unsplash.com/photo-1521295121783-8a321d551ad2?auto=format&fit=crop&w=1200&q=80",
+    name: "LEGOLAND California",
+    category: "Familia / Niños",
+    image: "/images/legoland-california.jpg",
     description:
-      "Centro histórico con fuerte influencia mexicana, tiendas, restaurantes y ambiente tradicional. Muy agradable para caminar sin presión.",
-    effort: "Bajo",
-    duration: "1–3 h",
-    adult: "Gratis",
-    child: "Gratis",
-    address: "4002 Wallace St, San Diego, CA 92110",
-    maps: "https://www.google.com/maps/search/?api=1&query=4002+Wallace+St%2C+San+Diego%2C+CA+92110",
-    site: "https://www.parks.ca.gov/?page_id=663",
+      "Parque temático diseñado para niños, con atracciones LEGO, shows y áreas acuáticas. Muy recomendado para el niño de 6 años.",
+    effort: "Medio",
+    duration: "4–6 h",
+    adult: "$90–120",
+    child: "$90–110",
+    address: "1 Legoland Dr, Carlsbad, CA",
+    maps: "https://www.google.com/maps/search/?api=1&query=LEGOLAND+California",
+    site: "https://legoland.com/california",
   },
   {
-    name: "La Jolla Cove",
-    category: "Playa / Naturaleza",
-    image:
-      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80",
-    fallback:
-      "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80",
+    name: "Birch Aquarium",
+    category: "Familia / Niños",
+    image: "/images/birch-aquarium.jpg",
     description:
-      "Acantilados, agua clara y vistas muy bonitas. Ideal para fotos y paseo corto.",
+      "Acuario pequeño y educativo con enfoque en ciencia marina. Muy manejable y cómodo con bebé.",
+    effort: "Bajo",
+    duration: "1–2 h",
+    adult: "$20–30",
+    child: "$15–25",
+    address: "2300 Expedition Way, La Jolla, CA",
+    maps: "https://www.google.com/maps/search/?api=1&query=Birch+Aquarium",
+    site: "https://aquarium.ucsd.edu",
+  },
+  {
+    name: "Belmont Park",
+    category: "Familia / Niños",
+    image: "/images/belmont-park.jpg",
+    description:
+      "Parque de diversiones frente al mar con ambiente relajado. Ideal para combinar con playa.",
     effort: "Bajo",
     duration: "1–3 h",
     adult: "Gratis",
     child: "Gratis",
-    address: "1100 Coast Blvd, La Jolla, CA 92037",
-    maps: "https://www.google.com/maps/search/?api=1&query=1100+Coast+Blvd%2C+La+Jolla%2C+CA+92037",
+    address: "3146 Mission Blvd, San Diego, CA",
+    maps: "https://www.google.com/maps/search/?api=1&query=Belmont+Park+San+Diego",
+    site: "https://belmontpark.com",
+  },
+
+  // 🌊 PLAYAS Y NATURALEZA
+  {
+    name: "La Jolla Cove",
+    category: "Playas y Naturaleza",
+    image: "/images/la-jolla-cove.jpg",
+    description:
+      "Zona costera con acantilados, aguas claras y lobos marinos. Uno de los paisajes más icónicos de San Diego.",
+    effort: "Bajo",
+    duration: "1–3 h",
+    adult: "Gratis",
+    child: "Gratis",
+    address: "1100 Coast Blvd, La Jolla, CA",
+    maps: "https://www.google.com/maps/search/?api=1&query=La+Jolla+Cove",
     site: "https://lajolla.com",
   },
   {
     name: "Coronado Beach",
-    category: "Playa / Relax",
-    image:
-      "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80",
-    fallback:
-      "https://images.unsplash.com/photo-1493558103817-58b2924bce98?auto=format&fit=crop&w=1200&q=80",
+    category: "Playas y Naturaleza",
+    image: "/images/coronado-beach.jpg",
     description:
-      "Playa amplia, limpia y elegante. Muy cómoda para familia y para relajarse.",
+      "Playa amplia, limpia y elegante frente al Hotel del Coronado. Perfecta para relajarse en familia.",
     effort: "Bajo",
     duration: "2–4 h",
     adult: "Gratis",
     child: "Gratis",
-    address: "1500 Orange Ave, Coronado, CA 92118",
-    maps: "https://www.google.com/maps/search/?api=1&query=1500+Orange+Ave%2C+Coronado%2C+CA+92118",
-    site: "https://www.coronado.ca.us",
+    address: "1500 Orange Ave, Coronado, CA",
+    maps: "https://www.google.com/maps/search/?api=1&query=Coronado+Beach",
+    site: "https://coronado.ca.us",
   },
   {
     name: "Sunset Cliffs",
-    category: "Naturaleza / Vista",
-    image:
-      "https://images.unsplash.com/photo-1473116763249-2faaef81ccda?auto=format&fit=crop&w=1200&q=80",
-    fallback:
-      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80",
+    category: "Playas y Naturaleza",
+    image: "/images/sunset-cliffs.jpg",
     description:
-      "Acantilados con una de las mejores vistas al atardecer en San Diego. Excelente para una salida corta y memorable.",
+      "Acantilados con vistas espectaculares del océano, especialmente al atardecer. Experiencia corta pero muy impactante.",
     effort: "Bajo",
     duration: "1–2 h",
     adult: "Gratis",
     child: "Gratis",
-    address: "680 Ladera St, San Diego, CA 92107",
-    maps: "https://www.google.com/maps/search/?api=1&query=680+Ladera+St%2C+San+Diego%2C+CA+92107",
-    site: "https://www.sandiego.gov/park-and-recreation/parks/regional/sunsetcliffs",
+    address: "680 Ladera St, San Diego, CA",
+    maps: "https://www.google.com/maps/search/?api=1&query=Sunset+Cliffs",
+    site: "https://sandiego.gov",
+  },
+  {
+    name: "Torrey Pines",
+    category: "Playas y Naturaleza",
+    image: "/images/torrey-pines.jpg",
+    description:
+      "Reserva natural con senderos y vistas panorámicas del océano. Ideal para quienes disfrutan caminar en naturaleza.",
+    effort: "Medio/Alto",
+    duration: "2–4 h",
+    adult: "$15 parking",
+    child: "-",
+    address: "12600 N Torrey Pines Rd, La Jolla, CA",
+    maps: "https://www.google.com/maps/search/?api=1&query=Torrey+Pines",
+    site: "https://torreypines.org",
+  },
+
+  // 🏙 EXPERIENCIAS URBANAS
+  {
+    name: "Old Town San Diego",
+    category: "Experiencias Urbanas",
+    image: "/images/old-town-san-diego.jpg",
+    description:
+      "Centro histórico con fuerte influencia mexicana, tiendas, restaurantes y ambiente cultural. Muy auténtico.",
+    effort: "Bajo",
+    duration: "1–3 h",
+    adult: "Gratis",
+    child: "Gratis",
+    address: "4002 Wallace St, San Diego, CA",
+    maps: "https://www.google.com/maps/search/?api=1&query=Old+Town+San+Diego",
+    site: "https://oldtownsandiego.org",
+  },
+  {
+    name: "Little Italy",
+    category: "Experiencias Urbanas",
+    image: "/images/little-italy.jpg",
+    description:
+      "Zona moderna con restaurantes, cafés y excelente ambiente. Ideal para cenas.",
+    effort: "Bajo",
+    duration: "2–3 h",
+    adult: "Variable",
+    child: "Variable",
+    address: "India St & W Date St, San Diego, CA",
+    maps: "https://www.google.com/maps/search/?api=1&query=Little+Italy+San+Diego",
+    site: "https://littleitalysd.com",
+  },
+  {
+    name: "Seaport Village",
+    category: "Experiencias Urbanas",
+    image: "/images/seaport-village.jpg",
+    description:
+      "Paseo frente al mar con tiendas, restaurantes y ambiente relajado. Muy agradable para caminar.",
+    effort: "Bajo",
+    duration: "1–2 h",
+    adult: "Gratis",
+    child: "Gratis",
+    address: "849 W Harbor Dr, San Diego, CA",
+    maps: "https://www.google.com/maps/search/?api=1&query=Seaport+Village",
+    site: "https://seaportvillage.com",
+  },
+  {
+    name: "Gaslamp Quarter",
+    category: "Experiencias Urbanas",
+    image: "/images/gaslamp-quarter.jpg",
+    description:
+      "Zona histórica con restaurantes y vida nocturna. Más orientado a adultos.",
+    effort: "Bajo",
+    duration: "2–4 h",
+    adult: "Gratis",
+    child: "-",
+    address: "614 5th Ave, San Diego, CA",
+    maps: "https://www.google.com/maps/search/?api=1&query=Gaslamp+Quarter",
+    site: "https://gaslamp.org",
+  },
+
+  // 🚗 ALREDEDORES
+  {
+    name: "Carlsbad Flower Fields",
+    category: "Alrededores",
+    image: "/images/carlsbad-flower-fields.jpg",
+    description:
+      "Campos de flores en temporada, muy coloridos y fotogénicos.",
+    effort: "Bajo",
+    duration: "1–2 h",
+    adult: "$20–30",
+    child: "$20–30",
+    address: "5704 Paseo Del Norte, Carlsbad, CA",
+    maps: "https://www.google.com/maps/search/?api=1&query=Carlsbad+Flower+Fields",
+    site: "https://theflowerfields.com",
+  },
+  {
+    name: "Laguna Beach",
+    category: "Alrededores",
+    image: "/images/laguna-beach.jpg",
+    description:
+      "Playa de alto nivel con calas, arte y paisajes espectaculares. Ideal para paseo premium.",
+    effort: "Bajo",
+    duration: "Medio día",
+    adult: "Gratis",
+    child: "Gratis",
+    address: "Laguna Beach, CA",
+    maps: "https://www.google.com/maps/search/?api=1&query=Laguna+Beach",
+    site: "https://visitlagunabeach.com",
+  },
+  {
+    name: "Anza-Borrego Desert",
+    category: "Alrededores",
+    image: "/images/anza-borrego-desert.jpg",
+    description:
+      "Desierto con esculturas y paisajes únicos. Experiencia diferente, pero más exigente.",
+    effort: "Alto",
+    duration: "Día completo",
+    adult: "Gratis",
+    child: "Gratis",
+    address: "Borrego Springs, CA",
+    maps: "https://www.google.com/maps/search/?api=1&query=Anza+Borrego",
+    site: "https://parks.ca.gov",
   },
 ];
 
 const people = ["Mauricio", "Rosario", "Eric", "Erika", "Adrián"];
+
+const getEffortColor = (level: string) => {
+  if (level.includes("Bajo")) return "#22c55e";
+  if (level.includes("Medio/Alto")) return "#f97316";
+  if (level.includes("Medio")) return "#eab308";
+  if (level.includes("Alto")) return "#ef4444";
+  return "#6b7280";
+};
 
 function PlaceImage({ place }: { place: Place }) {
   const [src, setSrc] = useState(place.image);
@@ -165,10 +298,10 @@ function PlaceImage({ place }: { place: Place }) {
     <img
       src={src}
       alt={place.name}
-      onError={() => setSrc(place.fallback)}
+      onError={() => setSrc(place.fallback || "/images/placeholder.jpg")}
       style={{
         width: "100%",
-        height: "230px",
+        height: "240px",
         objectFit: "cover",
         display: "block",
       }}
@@ -186,12 +319,13 @@ export default function Page() {
   );
 
   const filtered = useMemo(() => {
-    const q = query.toLowerCase();
+    const q = query.trim().toLowerCase();
+    if (!q) return places;
     return places.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q)
+      (place) =>
+        place.name.toLowerCase().includes(q) ||
+        place.category.toLowerCase().includes(q) ||
+        place.description.toLowerCase().includes(q)
     );
   }, [query]);
 
@@ -208,7 +342,7 @@ export default function Page() {
   const voteCount = (placeName: string) =>
     Object.values(votes[placeName] || {}).filter(Boolean).length;
 
-  const finalList = places.filter((p) => finalSelection[p.name]);
+  const finalList = places.filter((place) => finalSelection[place.name]);
 
   return (
     <main
@@ -493,14 +627,16 @@ export default function Page() {
                         style={{
                           padding: "7px 12px",
                           borderRadius: 999,
-                          background: "#f8fafc",
-                          border: "1px solid #e2e8f0",
+                          backgroundColor: getEffortColor(place.effort),
+                          color: "#ffffff",
+                          border: "1px solid transparent",
                           fontSize: 12,
                           fontWeight: 700,
                         }}
                       >
                         Cansancio: {place.effort}
                       </span>
+
                       <span
                         style={{
                           padding: "7px 12px",
@@ -513,6 +649,7 @@ export default function Page() {
                       >
                         Duración: {place.duration}
                       </span>
+
                       <span
                         style={{
                           padding: "7px 12px",
