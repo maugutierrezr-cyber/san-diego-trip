@@ -281,7 +281,7 @@ const places: Place[] = [
   },
 ];
 
-const people = ["Mauricio", "Rosario", "Eric", "Erika", "Adrián"];
+const people = ["Mauricio", "Rosario", "Eric", "Erika", "Adrián", "Felipe"];
 
 const getEffortColor = (level: string) => {
   if (level.includes("Bajo")) return "#22c55e";
