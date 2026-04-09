@@ -17,6 +17,27 @@ type Place = {
   site: string;
 };
 
+type ShoppingPlace = {
+  name: string;
+  category: "outlet" | "mall" | "souvenirs" | "premium" | "discount";
+  image: string;
+  description: string;
+  address: string;
+  maps: string;
+  distance: number; // minutos aprox desde 1625 Via Madrina
+  priceLevel: "barato" | "medio" | "caro";
+  priority: "alta" | "media" | "baja";
+};
+
+type ShoppingState = Record<
+  string,
+  {
+    interested?: boolean;
+    wantToGo?: boolean;
+    visited?: boolean;
+  }
+>;
+
 const places: Place[] = [
   // 🏆 IMPERDIBLES
   {
@@ -309,6 +330,141 @@ function PlaceImage({ place }: { place: Place }) {
   );
 }
 
+const shoppingPlaces: ShoppingPlace[] = [
+  {
+    name: "One Paseo",
+    category: "mall",
+    image: "/images/shopping/one-paseo.jpg",
+    description:
+      "Muy cerca del hospedaje. Ideal para paseo, tiendas selectas, cafés y compras cómodas sin alejarse.",
+    address: "3725 Paseo Pl, San Diego, CA 92130",
+    maps: "https://www.google.com/maps/search/?api=1&query=3725+Paseo+Pl+San+Diego+CA+92130",
+    distance: 5,
+    priceLevel: "medio",
+    priority: "alta",
+  },
+  {
+    name: "Westfield UTC",
+    category: "mall",
+    image: "/images/shopping/westfield-utc.jpg",
+    description:
+      "La mejor combinación de cercanía, variedad y conveniencia. Muy buena opción base para compras del grupo.",
+    address: "4545 La Jolla Village Dr, San Diego, CA 92122",
+    maps: "https://www.google.com/maps/search/?api=1&query=4545+La+Jolla+Village+Dr+San+Diego+CA+92122",
+    distance: 12,
+    priceLevel: "medio",
+    priority: "alta",
+  },
+  {
+    name: "Del Mar Highlands Town Center",
+    category: "mall",
+    image: "/images/shopping/del-mar-highlands.jpg",
+    description:
+      "Muy conveniente por ubicación. Más útil para compras rápidas, farmacia, básicos y paradas prácticas.",
+    address: "12925 El Camino Real, San Diego, CA 92130",
+    maps: "https://www.google.com/maps/search/?api=1&query=12925+El+Camino+Real+San+Diego+CA+92130",
+    distance: 6,
+    priceLevel: "medio",
+    priority: "alta",
+  },
+  {
+    name: "Fashion Valley",
+    category: "premium",
+    image: "/images/shopping/fashion-valley.jpg",
+    description:
+      "Centro comercial fuerte en marcas premium y experiencia. Más atractivo para ver y comparar que para ahorro.",
+    address: "7007 Friars Rd, San Diego, CA 92108",
+    maps: "https://www.google.com/maps/search/?api=1&query=7007+Friars+Rd+San+Diego+CA+92108",
+    distance: 22,
+    priceLevel: "caro",
+    priority: "media",
+  },
+  {
+    name: "Carlsbad Premium Outlets",
+    category: "outlet",
+    image: "/images/shopping/carlsbad-premium-outlets.jpg",
+    description:
+      "Muy buena relación precio para ropa y marcas conocidas. Vale la pena si quieren compras con ahorro real.",
+    address: "5620 Paseo Del Norte, Carlsbad, CA 92008",
+    maps: "https://www.google.com/maps/search/?api=1&query=5620+Paseo+Del+Norte+Carlsbad+CA+92008",
+    distance: 28,
+    priceLevel: "barato",
+    priority: "alta",
+  },
+  {
+    name: "Las Americas Premium Outlets",
+    category: "outlet",
+    image: "/images/shopping/las-americas-premium-outlets.jpg",
+    description:
+      "Gran opción outlet con precios competitivos, pero bastante más lejos. Mejor para un día de compras dedicado.",
+    address: "4211 Camino De La Plaza, San Diego, CA 92173",
+    maps: "https://www.google.com/maps/search/?api=1&query=4211+Camino+De+La+Plaza+San+Diego+CA+92173",
+    distance: 40,
+    priceLevel: "barato",
+    priority: "media",
+  },
+  {
+    name: "Seaport Village",
+    category: "souvenirs",
+    image: "/images/shopping/seaport-village.jpg",
+    description:
+      "Bueno para regalos, recuerdos y tiendas locales. Más experiencia turística que compras por ahorro.",
+    address: "849 W Harbor Dr, San Diego, CA 92101",
+    maps: "https://www.google.com/maps/search/?api=1&query=849+W+Harbor+Dr+San+Diego+CA+92101",
+    distance: 28,
+    priceLevel: "medio",
+    priority: "media",
+  },
+  {
+    name: "Bazaar del Mundo",
+    category: "souvenirs",
+    image: "/images/shopping/bazaar-del-mundo.jpg",
+    description:
+      "Muy buena opción para artesanías, decoración y souvenirs con personalidad. Ideal si visitan Old Town.",
+    address: "4133 Taylor St, San Diego, CA 92110",
+    maps: "https://www.google.com/maps/search/?api=1&query=4133+Taylor+St+San+Diego+CA+92110",
+    distance: 24,
+    priceLevel: "medio",
+    priority: "media",
+  },
+  {
+    name: "Target (Carmel Mountain / UTC según ruta)",
+    category: "discount",
+    image: "/images/shopping/target.jpg",
+    description:
+      "Muy útil para compras prácticas, snacks, básicos, ropa casual y artículos más baratos que en Costa Rica.",
+    address: "San Diego, CA",
+    maps: "https://www.google.com/maps/search/?api=1&query=Target+near+San+Diego+CA",
+    distance: 12,
+    priceLevel: "barato",
+    priority: "alta",
+  },
+  {
+    name: "Ross Dress for Less",
+    category: "discount",
+    image: "/images/shopping/ross.jpg",
+    description:
+      "Excelente relación precio si quieren ropa, accesorios y oportunidades. De las mejores paradas por ahorro.",
+    address: "San Diego, CA",
+    maps: "https://www.google.com/maps/search/?api=1&query=Ross+Dress+for+Less+near+San+Diego+CA",
+    distance: 15,
+    priceLevel: "barato",
+    priority: "alta",
+  },
+  {
+    name: "Marshalls",
+    category: "discount",
+    image: "/images/shopping/marshalls.jpg",
+    description:
+      "Muy buena opción de descuentos en ropa, hogar y accesorios. Conveniente para compras espontáneas.",
+    address: "San Diego, CA",
+    maps: "https://www.google.com/maps/search/?api=1&query=Marshalls+near+San+Diego+CA",
+    distance: 15,
+    priceLevel: "barato",
+    priority: "alta",
+  },
+];
+
 export default function Page() {
   const [query, setQuery] = useState("");
   const [votes, setVotes] = useState<Record<string, Record<string, boolean>>>(
@@ -317,6 +473,12 @@ export default function Page() {
   const [finalSelection, setFinalSelection] = useState<Record<string, boolean>>(
     {}
   );
+  const [section, setSection] = useState<"atracciones" | "compras">("atracciones");
+const [shoppingQuery, setShoppingQuery] = useState("");
+const [shoppingFilter, setShoppingFilter] = useState<
+  "all" | "nearby" | "cheap" | "recommended"
+>("recommended");
+const [shoppingState, setShoppingState] = useState<ShoppingState>({});
 
 const filtered = useMemo(() => {
   const q = query.trim().toLowerCase();
