@@ -318,16 +318,24 @@ export default function Page() {
     {}
   );
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return places;
-    return places.filter(
-      (place) =>
-        place.name.toLowerCase().includes(q) ||
-        place.category.toLowerCase().includes(q) ||
-        place.description.toLowerCase().includes(q)
-    );
-  }, [query]);
+const filtered = useMemo(() => {
+  const q = query.trim().toLowerCase();
+
+  const base = !q
+    ? places
+    : places.filter(
+        (place) =>
+          place.name.toLowerCase().includes(q) ||
+          place.category.toLowerCase().includes(q) ||
+          place.description.toLowerCase().includes(q)
+      );
+
+  return [...base].sort((a, b) => {
+    const votesA = Object.values(votes[a.name] || {}).filter(Boolean).length;
+    const votesB = Object.values(votes[b.name] || {}).filter(Boolean).length;
+    return votesB - votesA;
+  });
+}, [query, votes]);
 
   const SHEETS_URL = "https://script.google.com/macros/s/AKfycbzGD3_66bqe2JILU-72Q9_MJX6UoIIE66jQHoKIoyTi9kAqz1a0ZHwWdhO6uWDF6NMu7w/exec";
   const toggleVote = async (placeName: string, person: string) => {
