@@ -12,9 +12,34 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "San Diego Family Trip",
-  description: "Explorá, votá y elegí las mejores experiencias para nuestro viaje a San Diego.",
+  description:
+    "Explorá, votá y elegí las mejores experiencias para nuestro viaje a San Diego.",
+  openGraph: {
+    title: "San Diego Family Trip",
+    description:
+      "Explorá, votá y elegí las mejores experiencias para nuestro viaje a San Diego.",
+    url: "https://san-diego-trip-coral.vercel.app",
+    siteName: "San Diego Family Trip",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "San Diego Family Trip preview",
+      },
+    ],
+    locale: "es_CR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "San Diego Family Trip",
+    description:
+      "Explorá, votá y elegí las mejores experiencias para nuestro viaje a San Diego.",
+    images: ["/og-image.jpg"],
+  },
 };
 
 export default function RootLayout({
