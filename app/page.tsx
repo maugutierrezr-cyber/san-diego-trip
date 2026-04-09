@@ -329,15 +329,35 @@ export default function Page() {
     );
   }, [query]);
 
-  const toggleVote = (placeName: string, person: string) => {
-    setVotes((prev) => ({
-      ...prev,
-      [placeName]: {
-        ...(prev[placeName] || {}),
-        [person]: !(prev[placeName] || {})[person],
+  const SHEETS_URL = "https://script.google.com/macros/s/AKfycbzGD3_66bqe2JILU-72Q9_MJX6UoIIE66jQHoKIoyTi9kAqz1a0ZHwWdhO6uWDF6NMu7w/exec";
+  const toggleVote = async (placeName: string, person: string) => {
+    const newValue = !(votes[placeName] || {})[person];
+
+  setVotes((prev) => ({
+    ...prev,
+    [placeName]: {
+      ...(prev[placeName] || {}),
+      [person]: newValue,
+    },
+  }));
+
+  try {
+    await fetch(SHEETS_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8",
       },
-    }));
-  };
+      body: JSON.stringify({
+        place: placeName,
+        person,
+        vote: newValue,
+        final: !!finalSelection[placeName],
+      }),
+    });
+  } catch (error) {
+    console.error("Error guardando voto:", error);
+  }
+};
 
   const voteCount = (placeName: string) =>
     Object.values(votes[placeName] || {}).filter(Boolean).length;
