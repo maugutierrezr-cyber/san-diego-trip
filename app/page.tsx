@@ -698,16 +698,35 @@ export default function Page() {
                       whiteSpace: "nowrap",
                     }}
                   >
-                    <input
-                      type="checkbox"
-                      checked={!!finalSelection[place.name]}
-                      onChange={() =>
-                        setFinalSelection((prev) => ({
-                          ...prev,
-                          [place.name]: !prev[place.name],
-                        }))
-                      }
-                    />
+<input
+  type="checkbox"
+  checked={!!finalSelection[place.name]}
+  onChange={async () => {
+    const newFinal = !finalSelection[place.name];
+
+    setFinalSelection((prev) => ({
+      ...prev,
+      [place.name]: newFinal,
+    }));
+
+    try {
+      await fetch(SHEETS_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+        },
+        body: JSON.stringify({
+          place: place.name,
+          person: "SELECCION_FINAL",
+          vote: false,
+          final: newFinal,
+        }),
+      });
+    } catch (error) {
+      console.error("Error guardando selección final:", error);
+    }
+  }}
+/>
                     Final
                   </label>
                 </div>
