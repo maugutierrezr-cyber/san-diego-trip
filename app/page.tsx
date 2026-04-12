@@ -1081,32 +1081,7 @@ const filtered = useMemo(() => {
 
                 <div style={{ color: "#475569", fontSize: 13, marginBottom: 14, lineHeight: 1.6 }}>📍 {place.address}</div>
 
-                {/* Mejor horario dinámico */}
-                <div style={{ background: "#f0fdf4", borderRadius: 16, padding: 14, border: "1px solid #86efac", marginBottom: 14 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#16a34a", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.1em" }}>🕐 Mejor horario</div>
-                  {selectedDay ? (
-                    <p style={{ margin: 0, fontSize: 13, color: "#15803d", lineHeight: 1.6 }}>{getBestTimeForDay(place, selectedDay)}</p>
-                  ) : (
-                    <div>
-                      <p style={{ margin: "0 0 8px", fontSize: 13, color: "#15803d", lineHeight: 1.6 }}>{place.bestTime}</p>
-                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                        {TRIP_DAYS.map(day => (
-                          <button key={day} type="button" onClick={() => setSelectedDay(day)}
-                            style={{ padding: "4px 10px", borderRadius: 999, border: "1px solid #86efac", background: "#fff", fontSize: 11, fontWeight: 600, color: "#16a34a", cursor: "pointer" }}>
-                            {day}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {selectedDay && (
-                    <button type="button" onClick={() => setSelectedDay("")}
-                      style={{ marginTop: 8, fontSize: 11, color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                      ← Ver todos los días
-                    </button>
-                  )}
-                </div>
-
+                {/* Botones de navegación */}
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
                   <a href={place.maps} target="_blank" rel="noreferrer"
                     style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "12px 16px", borderRadius: 16, background: "#0f172a", color: "#fff", textDecoration: "none", fontSize: 14, fontWeight: 700 }}>
@@ -1122,29 +1097,99 @@ const filtered = useMemo(() => {
                   </a>
                 </div>
 
-                {/* Fecha tentativa — restringida al rango del viaje */}
-                <div style={{ marginTop: 4, padding: 14, background: "#f8fafc", borderRadius: 16, border: "1px solid #e2e8f0" }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.1em" }}>📅 ¿Qué día van? (15–25 mayo)</div>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
-                    {TRIP_DAYS.map(day => {
-                      const dateMap: Record<string,string> = {"vie 15":"2026-05-15","sáb 16":"2026-05-16","dom 17":"2026-05-17","lun 18":"2026-05-18","mar 19":"2026-05-19","mié 20":"2026-05-20","jue 21":"2026-05-21","vie 22":"2026-05-22","sáb 23":"2026-05-23","dom 24":"2026-05-24","lun 25":"2026-05-25"};
-                      const isSelected = tentativeDates[place.name] === dateMap[day];
-                      return (
-                        <button key={day} type="button"
-                          onClick={() => setTentativeDates(prev => ({ ...prev, [place.name]: isSelected ? "" : dateMap[day] }))}
-                          style={{ padding: "5px 10px", borderRadius: 999, border: isSelected ? "2px solid #0f172a" : "1px solid #e2e8f0", background: isSelected ? "#0f172a" : "#fff", color: isSelected ? "#fff" : "#64748b", fontSize: 11, fontWeight: isSelected ? 700 : 500, cursor: "pointer" }}>
-                          {day}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {tentativeDates[place.name] && (
-                    <button type="button" onClick={() => addToCalendar(place.name, tentativeDates[place.name])}
-                      style={{ width: "100%", padding: "9px", borderRadius: 12, border: "none", background: "#0f172a", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-                      📅 Agregar a Google Calendar
-                    </button>
-                  )}
-                </div>
+                {/* Planificador unificado — día + horario + calendario */}
+                {(() => {
+                  const dateMap: Record<string,string> = {"vie 15":"2026-05-15","sáb 16":"2026-05-16","dom 17":"2026-05-17","lun 18":"2026-05-18","mar 19":"2026-05-19","mié 20":"2026-05-20","jue 21":"2026-05-21","vie 22":"2026-05-22","sáb 23":"2026-05-23","dom 24":"2026-05-24","lun 25":"2026-05-25"};
+                  const selectedDate = tentativeDates[place.name] || "";
+                  const selectedDayLabel = Object.entries(dateMap).find(([, v]) => v === selectedDate)?.[0] || "";
+                  const isWeekend = selectedDayLabel.startsWith("sáb") || selectedDayLabel.startsWith("dom");
+                  // Otros lugares ya agendados en el mismo día
+                  const conflicts = places.filter(p => p.name !== place.name && tentativeDates[p.name] === selectedDate);
+                  return (
+                    <div style={{ background: "#f8fafc", borderRadius: 16, border: "1px solid #e2e8f0", overflow: "hidden", marginBottom: 4 }}>
+                      {/* Header desplegable */}
+                      <button type="button"
+                        onClick={() => setOpenComments(prev => ({ ...prev, [`__day__${place.name}`]: !prev[`__day__${place.name}`] }))}
+                        style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: "none", border: "none", cursor: "pointer" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span style={{ fontSize: 16 }}>📅</span>
+                          <div style={{ textAlign: "left" }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.1em" }}>¿Cuándo planean ir?</div>
+                            {selectedDayLabel
+                              ? <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{selectedDayLabel} de mayo · {isWeekend ? "Fin de semana" : "Entre semana"}</div>
+                              : <div style={{ fontSize: 13, color: "#94a3b8" }}>Seleccioná un día del viaje</div>
+                            }
+                          </div>
+                        </div>
+                        <span style={{ fontSize: 12, color: "#94a3b8" }}>{openComments[`__day__${place.name}`] ? "▲" : "▼"}</span>
+                      </button>
+
+                      {openComments[`__day__${place.name}`] && (
+                        <div style={{ padding: "0 16px 16px" }}>
+                          {/* Chips de días */}
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+                            {TRIP_DAYS.map(day => {
+                              const isSelected = selectedDayLabel === day;
+                              const hasOther = Object.entries(tentativeDates).some(([pName, pDate]) => pName !== place.name && pDate === dateMap[day]);
+                              return (
+                                <button key={day} type="button"
+                                  onClick={() => setTentativeDates(prev => ({ ...prev, [place.name]: isSelected ? "" : dateMap[day] }))}
+                                  style={{
+                                    padding: "6px 12px", borderRadius: 999,
+                                    border: isSelected ? "2px solid #0f172a" : hasOther ? "1px solid #fbbf24" : "1px solid #e2e8f0",
+                                    background: isSelected ? "#0f172a" : hasOther ? "#fefce8" : "#fff",
+                                    color: isSelected ? "#fff" : hasOther ? "#92400e" : "#64748b",
+                                    fontSize: 12, fontWeight: isSelected ? 800 : 500, cursor: "pointer",
+                                    position: "relative" as const,
+                                  }}>
+                                  {day}{hasOther ? " ⚡" : ""}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* Recomendación de horario para el día elegido */}
+                          {selectedDayLabel && (
+                            <div style={{ background: isWeekend ? "#fff7ed" : "#f0fdf4", borderRadius: 12, padding: 12, marginBottom: 12, border: isWeekend ? "1px solid #fed7aa" : "1px solid #86efac" }}>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: isWeekend ? "#f97316" : "#16a34a", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                                🕐 {isWeekend ? "Advertencia fin de semana" : "Recomendación para este día"}
+                              </div>
+                              <p style={{ margin: 0, fontSize: 13, color: isWeekend ? "#c2410c" : "#15803d", lineHeight: 1.6 }}>
+                                {getBestTimeForDay(place, selectedDayLabel)}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Sin día seleccionado — mostrar recomendación general */}
+                          {!selectedDayLabel && (
+                            <div style={{ background: "#f0fdf4", borderRadius: 12, padding: 12, marginBottom: 12, border: "1px solid #86efac" }}>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: "#16a34a", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.08em" }}>🕐 Mejor horario general</div>
+                              <p style={{ margin: 0, fontSize: 13, color: "#15803d", lineHeight: 1.6 }}>{place.bestTime}</p>
+                            </div>
+                          )}
+
+                          {/* Conflictos — otros lugares ese mismo día */}
+                          {conflicts.length > 0 && (
+                            <div style={{ background: "#fefce8", borderRadius: 12, padding: 10, marginBottom: 12, border: "1px solid #fbbf24" }}>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: "#92400e", marginBottom: 4 }}>⚡ Ese día ya tienen agendado:</div>
+                              {conflicts.map(c => (
+                                <div key={c.name} style={{ fontSize: 12, color: "#78350f" }}>• {c.name}</div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Botón calendario */}
+                          {selectedDate && (
+                            <button type="button" onClick={() => addToCalendar(place.name, selectedDate)}
+                              style={{ width: "100%", padding: "10px", borderRadius: 12, border: "none", background: "#0f172a", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                              📅 Agregar a Google Calendar
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Comentarios */}
                 <div style={{ marginTop: 12 }}>
