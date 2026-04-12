@@ -380,14 +380,38 @@ const shoppingPlaces: ShoppingPlace[] = [
     priority: "media",
   },
   {
+    name: "Nordstrom Rack – Carmel Mountain",
+    category: "outlet",
+    image: "/images/shopping/nordstrom-rack.jpg",
+    description:
+      "A solo 8 minutos del hospedaje. Descuentos en ropa, zapatos y accesorios de Nordstrom. El outlet más cercano y práctico para el grupo.",
+    address: "11940 Carmel Mountain Rd, San Diego, CA 92128",
+    maps: "https://www.google.com/maps/search/?api=1&query=11940+Carmel+Mountain+Rd+San+Diego+CA+92128",
+    distance: 8,
+    priceLevel: "medio",
+    priority: "alta",
+  },
+  {
     name: "Carlsbad Premium Outlets",
     category: "outlet",
     image: "/images/shopping/carlsbad-premium-outlets.jpg",
     description:
-      "Muy buena relación precio para ropa y marcas conocidas. Vale la pena si quieren compras con ahorro real.",
+      "Muy buena relación precio para ropa y marcas conocidas. Nike, Gap, Coach, Levi's y más. Vale la pena si quieren compras con ahorro real.",
     address: "5620 Paseo Del Norte, Carlsbad, CA 92008",
     maps: "https://www.google.com/maps/search/?api=1&query=5620+Paseo+Del+Norte+Carlsbad+CA+92008",
     distance: 28,
+    priceLevel: "barato",
+    priority: "alta",
+  },
+  {
+    name: "Outlets at San Clemente",
+    category: "outlet",
+    image: "/images/shopping/san-clemente-outlets.jpg",
+    description:
+      "60+ marcas con vistas al océano Pacífico. Tommy Hilfiger, Calvin Klein, Under Armour, H&M, New Balance y más. Perfecto si van hacia LA o Disneyland.",
+    address: "101 W Avenida Vista Hermosa, San Clemente, CA 92672",
+    maps: "https://www.google.com/maps/search/?api=1&query=101+W+Avenida+Vista+Hermosa+San+Clemente+CA+92672",
+    distance: 45,
     priceLevel: "barato",
     priority: "alta",
   },
@@ -396,7 +420,7 @@ const shoppingPlaces: ShoppingPlace[] = [
     category: "outlet",
     image: "/images/shopping/las-americas-premium-outlets.jpg",
     description:
-      "Gran opción outlet con precios competitivos, pero bastante más lejos. Mejor para un día de compras dedicado.",
+      "125 tiendas cerca de la frontera con México. BCBG, Kate Spade, Polo Ralph Lauren, Banana Republic, Calvin Klein. Mejor para un día de compras dedicado.",
     address: "4211 Camino De La Plaza, San Diego, CA 92173",
     maps: "https://www.google.com/maps/search/?api=1&query=4211+Camino+De+La+Plaza+San+Diego+CA+92173",
     distance: 40,
@@ -1149,10 +1173,25 @@ const filtered = useMemo(() => {
                 .map((sp) => {
                   const state = shoppingState[sp.name] || {};
                   const toggleShopping = (field: "interested" | "wantToGo" | "visited") => {
-                    setShoppingState((prev) => ({
-                      ...prev,
-                      [sp.name]: { ...(prev[sp.name] || {}), [field]: !prev[sp.name]?.[field] },
-                    }));
+                    const newState = { ...(shoppingState[sp.name] || {}), [field]: !shoppingState[sp.name]?.[field] };
+                    setShoppingState((prev) => ({ ...prev, [sp.name]: newState }));
+                    try {
+                      fetch(SHEETS_URL, {
+                        method: "POST",
+                        headers: { "Content-Type": "text/plain;charset=utf-8" },
+                        body: JSON.stringify({
+                          place: sp.name,
+                          person: "SHOPPING",
+                          vote: false,
+                          final: false,
+                          shopping_interested: newState.interested || false,
+                          shopping_wantToGo: newState.wantToGo || false,
+                          shopping_visited: newState.visited || false,
+                        }),
+                      });
+                    } catch (error) {
+                      console.error("Error guardando estado de compras:", error);
+                    }
                   };
                   const priceColors: Record<string, string> = { barato: "#22c55e", medio: "#eab308", caro: "#ef4444" };
                   const categoryLabels: Record<string, string> = { outlet: "Outlet", mall: "Mall", souvenirs: "Souvenirs", premium: "Premium", discount: "Descuento" };
