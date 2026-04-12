@@ -823,44 +823,29 @@ const filtered = useMemo(() => {
             </div>
           </div>
 
-          <div
-            style={{
-              marginTop: 24,
-              display: "grid",
-              gridTemplateColumns: "1.4fr 1fr",
-              gap: 16,
-            }}
-          >
+          {/* Search + session — stacks on mobile */}
+          <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 12 }}>
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar por lugar, categoría o descripción..."
-              style={{
-                height: 48,
-                borderRadius: 16,
-                border: "1px solid #dbe3ee",
-                padding: "0 16px",
-                fontSize: 15,
-                outline: "none",
-                background: "#f8fafc",
-              }}
+              placeholder="🔍 Buscar lugar, categoría..."
+              style={{ width: "100%", boxSizing: "border-box", height: 48, borderRadius: 16, border: "1px solid #dbe3ee", padding: "0 16px", fontSize: 15, outline: "none", background: "#f8fafc" }}
             />
-
-            {/* Sesión activa */}
-            <div style={{ border: "1px solid #e2e8f0", borderRadius: 20, padding: 16, background: "#fff" }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#64748b", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.1em" }}>Votando como</div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                <span style={{ padding: "10px 18px", borderRadius: 999, background: "#0f172a", color: "#fff", fontSize: 15, fontWeight: 700 }}>
+            {/* Sesión activa — horizontal compact bar */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 16, padding: "10px 16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em" }}>Votando como</span>
+                <span style={{ padding: "6px 14px", borderRadius: 999, background: "#0f172a", color: "#fff", fontSize: 14, fontWeight: 700 }}>
                   👤 {currentPerson}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => { setCurrentPerson(null); setSubmitted(false); }}
-                  style={{ padding: "8px 14px", borderRadius: 999, border: "1px solid #e2e8f0", background: "#f8fafc", color: "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
-                >
-                  Cambiar
-                </button>
               </div>
+              <button
+                type="button"
+                onClick={() => { setCurrentPerson(null); setSubmitted(false); }}
+                style={{ padding: "6px 12px", borderRadius: 999, border: "1px solid #e2e8f0", background: "#f8fafc", color: "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+              >
+                Cambiar
+              </button>
             </div>
           </div>
         </section>
