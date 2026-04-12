@@ -12,9 +12,17 @@ type Place = {
   duration: string;
   adult: string;
   child: string;
+  adultMWR?: string;
+  childMWR?: string;
+  mwrNote?: string;
   address: string;
   maps: string;
   site: string;
+  openHour: number;  // hora de apertura (24h)
+  peakStart: number; // inicio de hora pico
+  peakEnd: number;   // fin de hora pico
+  bestTime: string;  // texto recomendación entre semana
+  weekendWarning: string; // advertencia específica para fin de semana
 };
 
 type ShoppingPlace = {
@@ -44,265 +52,276 @@ const places: Place[] = [
     name: "San Diego Zoo",
     category: "Imperdible",
     image: "/images/san-diego-zoo.jpg",
-    description:
-      "Zoológico de clase mundial con hábitats abiertos, gran biodiversidad y teleférico interno. Ideal para recorrer en familia, aunque exige caminata constante.",
-    effort: "Alto",
-    duration: "4–6 h",
-    adult: "$70–80",
-    child: "$60–70",
+    description: "Zoológico de clase mundial con hábitats abiertos, gran biodiversidad y teleférico interno. Ideal para recorrer en familia, aunque exige caminata constante.",
+    effort: "Alto", duration: "4–6 h",
+    adult: "$70–80", child: "$60–70",
+    adultMWR: "$64.50", childMWR: "$56.25",
+    mwrNote: "Precio MWR disponible via primo en Naval Base",
     address: "2920 Zoo Dr, San Diego, CA",
     maps: "https://www.google.com/maps/search/?api=1&query=San+Diego+Zoo",
     site: "https://zoo.sandiegozoo.org",
+    openHour: 9, peakStart: 11, peakEnd: 15,
+    bestTime: "Llegar a las 9am — los animales están más activos y hay menos gente. Evitar 11am–3pm (hora pico con escolares).",
+    weekendWarning: "⚠️ Sábados y domingos el zoo recibe hasta 3x más visitantes. Llegar a las 9am en punto cuando abren las puertas. Comprar tickets online con anticipación para saltar la fila del ingreso.",
   },
   {
     name: "SeaWorld San Diego",
     category: "Imperdible",
     image: "/images/seaworld-san-diego.jpg",
-    description:
-      "Parque marino con shows de animales, montañas rusas y áreas infantiles. Muy equilibrado entre entretenimiento y educación.",
-    effort: "Medio",
-    duration: "4–6 h",
-    adult: "$80–100",
-    child: "$70–90",
+    description: "Parque marino con shows de animales, montañas rusas y áreas infantiles. Muy equilibrado entre entretenimiento y educación.",
+    effort: "Medio", duration: "4–6 h",
+    adult: "$80–100", child: "$70–90",
+    adultMWR: "$50.50", childMWR: "$50.50",
+    mwrNote: "1 Day MWR. Military Pass anual: $111.75",
     address: "500 Sea World Dr, San Diego, CA",
     maps: "https://www.google.com/maps/search/?api=1&query=SeaWorld+San+Diego",
     site: "https://seaworld.com/san-diego",
+    openHour: 10, peakStart: 12, peakEnd: 16,
+    bestTime: "Jueves o viernes antes del fin de semana. Llegar a las 10am y hacer las atracciones de agua primero antes del calor.",
+    weekendWarning: "⚠️ Fin de semana es el día más concurrido en SeaWorld. Filas de 45–60 min en atracciones principales. Ir directo a Journey to Atlantis al entrar. Considerar ir un jueves o viernes.",
   },
   {
     name: "USS Midway Museum",
     category: "Imperdible",
     image: "/images/uss-midway-museum.jpg",
-    description:
-      "Portaaviones histórico convertido en museo interactivo. Permite explorar cabinas, cubierta y aviones reales. Muy atractivo para adultos y niños curiosos.",
-    effort: "Medio",
-    duration: "2–3 h",
-    adult: "$30",
-    child: "$20",
+    description: "Portaaviones histórico convertido en museo interactivo. Permite explorar cabinas, cubierta y aviones reales. Muy atractivo para adultos y niños curiosos.",
+    effort: "Medio", duration: "2–3 h",
+    adult: "$30", child: "$20",
+    adultMWR: "$23.00", childMWR: "$17.50",
+    mwrNote: "Precio reducido MWR. Militar activo: entrada gratis",
     address: "910 N Harbor Dr, San Diego, CA",
     maps: "https://www.google.com/maps/search/?api=1&query=USS+Midway+Museum",
     site: "https://midway.org",
+    openHour: 10, peakStart: 12, peakEnd: 15,
+    bestTime: "Lunes o martes por la mañana. Menos concurrido entre semana. Ideal llegar a las 10am cuando abre.",
+    weekendWarning: "⚠️ Sábados hay filas moderadas en la entrada. Llegar antes de las 10am. El recorrido del portaaviones es más agitado — tomarse el tiempo para subir a cubierta temprano.",
   },
   {
     name: "Balboa Park",
     category: "Imperdible",
     image: "/images/balboa-park.jpg",
-    description:
-      "Complejo cultural con jardines, arquitectura histórica y múltiples museos. Ideal para paseos tranquilos o visitas parciales.",
-    effort: "Bajo",
-    duration: "2–5 h",
-    adult: "Gratis",
-    child: "Gratis",
+    description: "Complejo cultural con jardines, arquitectura histórica y múltiples museos. Ideal para paseos tranquilos o visitas parciales.",
+    effort: "Bajo", duration: "2–5 h",
+    adult: "Gratis", child: "Gratis",
     address: "1549 El Prado, San Diego, CA",
     maps: "https://www.google.com/maps/search/?api=1&query=Balboa+Park",
     site: "https://balboapark.org",
+    openHour: 8, peakStart: 11, peakEnd: 14,
+    bestTime: "Mañanas entre semana son ideales. Jardines más tranquilos antes de las 10am. Los museos militares ofrecen entrada gratis.",
+    weekendWarning: "⚠️ Domingos hay familias y eventos culturales — más animado pero más lleno. Estacionamiento limitado. Llegar temprano o usar transporte público.",
   },
-
   // 👨‍👩‍👧‍👦 FAMILIA / NIÑOS
   {
     name: "LEGOLAND California",
     category: "Familia / Niños",
     image: "/images/legoland-california.jpg",
-    description:
-      "Parque temático diseñado para niños, con atracciones LEGO, shows y áreas acuáticas. Muy recomendado para el niño de 6 años.",
-    effort: "Medio",
-    duration: "4–6 h",
-    adult: "$90–120",
-    child: "$90–110",
+    description: "Parque temático diseñado para niños, con atracciones LEGO, shows y áreas acuáticas. Muy recomendado para el niño de 6 años.",
+    effort: "Medio", duration: "4–6 h",
+    adult: "$90–120", child: "$90–110",
+    adultMWR: "$69.25", childMWR: "$69.25",
+    mwrNote: "Single Day MWR (2+ años). Combo LEGO+SeaLife con 2do día gratis: $74.50",
     address: "1 Legoland Dr, Carlsbad, CA",
     maps: "https://www.google.com/maps/search/?api=1&query=LEGOLAND+California",
     site: "https://legoland.com/california",
+    openHour: 10, peakStart: 12, peakEnd: 16,
+    bestTime: "Entre semana es mucho menos concurrido. Llegar a las 10am. Hacer Miniland y atracciones principales primero, agua después del mediodía.",
+    weekendWarning: "⚠️ LEGOLAND en fin de semana puede duplicar su afluencia. Filas largas en Dragon y atracciones acuáticas. Hacer las atracciones principales los primeros 90 minutos de apertura.",
   },
   {
     name: "Birch Aquarium",
     category: "Familia / Niños",
     image: "/images/birch-aquarium.jpg",
-    description:
-      "Acuario pequeño y educativo con enfoque en ciencia marina. Muy manejable y cómodo con bebé.",
-    effort: "Bajo",
-    duration: "1–2 h",
-    adult: "$20–30",
-    child: "$15–25",
+    description: "Acuario pequeño y educativo con enfoque en ciencia marina. Muy manejable y cómodo con bebé.",
+    effort: "Bajo", duration: "1–2 h",
+    adult: "$20–30", child: "$15–25",
+    adultMWR: "$28.75", childMWR: "$24.25",
+    mwrNote: "Precio MWR disponible via Naval Base",
     address: "2300 Expedition Way, La Jolla, CA",
     maps: "https://www.google.com/maps/search/?api=1&query=Birch+Aquarium",
     site: "https://aquarium.ucsd.edu",
+    openHour: 9, peakStart: 11, peakEnd: 14,
+    bestTime: "Mañanas de entre semana. Muy tranquilo antes de las 11am. Perfecto para combinar con La Jolla Cove el mismo día.",
+    weekendWarning: "⚠️ Fin de semana hay más familias pero sigue siendo manejable. Llegar antes de las 10am para disfrutar sin aglomeración. Estacionamiento en la UCSD puede ser complicado.",
   },
   {
     name: "Belmont Park",
     category: "Familia / Niños",
     image: "/images/belmont-park.jpg",
-    description:
-      "Parque de diversiones frente al mar con ambiente relajado. Ideal para combinar con playa.",
-    effort: "Bajo",
-    duration: "1–3 h",
-    adult: "Gratis",
-    child: "Gratis",
+    description: "Parque de diversiones frente al mar con ambiente relajado. Ideal para combinar con playa.",
+    effort: "Bajo", duration: "1–3 h",
+    adult: "Gratis", child: "Gratis",
+    adultMWR: "$45.25", childMWR: "$45.25",
+    mwrNote: "Combo Pass rides + atracciones MWR: $45.25",
     address: "3146 Mission Blvd, San Diego, CA",
     maps: "https://www.google.com/maps/search/?api=1&query=Belmont+Park+San+Diego",
     site: "https://belmontpark.com",
+    openHour: 11, peakStart: 14, peakEnd: 18,
+    bestTime: "Tardes entre semana o mañanas de fin de semana antes de las 11am. Ideal combinarlo con Mission Beach en la misma visita.",
+    weekendWarning: "⚠️ Sábados y domingos Belmont Park es muy popular con locales. La playa adyacente se llena. Ir antes de las 11am o después de las 6pm para mejor experiencia.",
   },
-
   // 🌊 PLAYAS Y NATURALEZA
   {
     name: "La Jolla Cove",
     category: "Playas y Naturaleza",
     image: "/images/la-jolla-cove.jpg",
-    description:
-      "Zona costera con acantilados, aguas claras y lobos marinos. Uno de los paisajes más icónicos de San Diego.",
-    effort: "Bajo",
-    duration: "1–3 h",
-    adult: "Gratis",
-    child: "Gratis",
+    description: "Zona costera con acantilados, aguas claras y lobos marinos. Uno de los paisajes más icónicos de San Diego.",
+    effort: "Bajo", duration: "1–3 h",
+    adult: "Gratis", child: "Gratis",
     address: "1100 Coast Blvd, La Jolla, CA",
     maps: "https://www.google.com/maps/search/?api=1&query=La+Jolla+Cove",
     site: "https://lajolla.com",
+    openHour: 7, peakStart: 11, peakEnd: 16,
+    bestTime: "Antes de las 9am para ver lobos marinos tranquilos y menos turistas. En mayo el agua está fresca pero el cielo es claro.",
+    weekendWarning: "⚠️ La Jolla Cove en fin de semana está muy concurrida — turistas, fotógrafos y grupos numerosos. Ir antes de las 8am para experiencia tranquila con los lobos marinos.",
   },
   {
     name: "Coronado Beach",
     category: "Playas y Naturaleza",
     image: "/images/coronado-beach.jpg",
-    description:
-      "Playa amplia, limpia y elegante frente al Hotel del Coronado. Perfecta para relajarse en familia.",
-    effort: "Bajo",
-    duration: "2–4 h",
-    adult: "Gratis",
-    child: "Gratis",
+    description: "Playa amplia, limpia y elegante frente al Hotel del Coronado. Perfecta para relajarse en familia.",
+    effort: "Bajo", duration: "2–4 h",
+    adult: "Gratis", child: "Gratis",
     address: "1500 Orange Ave, Coronado, CA",
     maps: "https://www.google.com/maps/search/?api=1&query=Coronado+Beach",
     site: "https://coronado.ca.us",
+    openHour: 7, peakStart: 12, peakEnd: 17,
+    bestTime: "Mañanas son ideales en mayo. La brisa es suave antes del mediodía. Combinar con un paseo por Orange Ave y el Hotel del Coronado.",
+    weekendWarning: "⚠️ Coronado Beach los fines de semana es uno de los destinos más concurridos de San Diego. Estacionamiento muy limitado. Considerar el ferry desde el centro (más relajado).",
   },
   {
     name: "Sunset Cliffs",
     category: "Playas y Naturaleza",
     image: "/images/sunset-cliffs.jpg",
-    description:
-      "Acantilados con vistas espectaculares del océano, especialmente al atardecer. Experiencia corta pero muy impactante.",
-    effort: "Bajo",
-    duration: "1–2 h",
-    adult: "Gratis",
-    child: "Gratis",
+    description: "Acantilados con vistas espectaculares del océano, especialmente al atardecer. Experiencia corta pero muy impactante.",
+    effort: "Bajo", duration: "1–2 h",
+    adult: "Gratis", child: "Gratis",
     address: "680 Ladera St, San Diego, CA",
     maps: "https://www.google.com/maps/search/?api=1&query=Sunset+Cliffs",
     site: "https://sandiego.gov",
+    openHour: 6, peakStart: 18, peakEnd: 20,
+    bestTime: "Atardecer entre las 7–8pm en mayo. Llegar 30 min antes para conseguir buen lugar. Entre semana hay mucha menos gente.",
+    weekendWarning: "⚠️ Sunset Cliffs en fin de semana está lleno de gente buscando el atardecer. Llegar 45–60 min antes para asegurar lugar. Cuidado con el estacionamiento en la calle.",
   },
   {
     name: "Torrey Pines",
     category: "Playas y Naturaleza",
     image: "/images/torrey-pines.jpg",
-    description:
-      "Reserva natural con senderos y vistas panorámicas del océano. Ideal para quienes disfrutan caminar en naturaleza.",
-    effort: "Medio/Alto",
-    duration: "2–4 h",
-    adult: "$15 parking",
-    child: "-",
+    description: "Reserva natural con senderos y vistas panorámicas del océano. Ideal para quienes disfrutan caminar en naturaleza.",
+    effort: "Medio/Alto", duration: "2–4 h",
+    adult: "$15 parking", child: "-",
     address: "12600 N Torrey Pines Rd, La Jolla, CA",
     maps: "https://www.google.com/maps/search/?api=1&query=Torrey+Pines",
     site: "https://torreypines.org",
+    openHour: 7, peakStart: 10, peakEnd: 14,
+    bestTime: "Temprano en la mañana (7–9am) para el mejor clima. En mayo hace fresco antes del mediodía. Llevar agua y zapatos cómodos.",
+    weekendWarning: "⚠️ Torrey Pines en fin de semana tiene el estacionamiento lleno desde las 9am. Llegar antes de las 8am o ir entre semana. Los senderos se congestionan en las horas pico.",
   },
-
   // 🏙 EXPERIENCIAS URBANAS
   {
     name: "Old Town San Diego",
     category: "Experiencias Urbanas",
     image: "/images/old-town-san-diego.jpg",
-    description:
-      "Centro histórico con fuerte influencia mexicana, tiendas, restaurantes y ambiente cultural. Muy auténtico.",
-    effort: "Bajo",
-    duration: "1–3 h",
-    adult: "Gratis",
-    child: "Gratis",
+    description: "Centro histórico con fuerte influencia mexicana, tiendas, restaurantes y ambiente cultural. Muy auténtico.",
+    effort: "Bajo", duration: "1–3 h",
+    adult: "Gratis", child: "Gratis",
     address: "4002 Wallace St, San Diego, CA",
     maps: "https://www.google.com/maps/search/?api=1&query=Old+Town+San+Diego",
     site: "https://oldtownsandiego.org",
+    openHour: 10, peakStart: 13, peakEnd: 16,
+    bestTime: "Mañanas entre semana. Los restaurantes están menos llenos antes de la 1pm. Combinar con Bazaar del Mundo para artesanías.",
+    weekendWarning: "⚠️ Old Town los fines de semana tiene eventos culturales y música en vivo — más animado pero más lleno. Los restaurantes tienen espera de 20–30 min para almorzar.",
   },
   {
     name: "Little Italy",
     category: "Experiencias Urbanas",
     image: "/images/little-italy.jpg",
-    description:
-      "Zona moderna con restaurantes, cafés y excelente ambiente. Ideal para cenas.",
-    effort: "Bajo",
-    duration: "2–3 h",
-    adult: "Variable",
-    child: "Variable",
+    description: "Zona moderna con restaurantes, cafés y excelente ambiente. Ideal para cenas.",
+    effort: "Bajo", duration: "2–3 h",
+    adult: "Variable", child: "Variable",
     address: "India St & W Date St, San Diego, CA",
     maps: "https://www.google.com/maps/search/?api=1&query=Little+Italy+San+Diego",
     site: "https://littleitalysd.com",
+    openHour: 11, peakStart: 19, peakEnd: 21,
+    bestTime: "Cena entre semana (lunes–jueves) para evitar esperas. Los sábados hay mercado de agricultores en la mañana — muy recomendado.",
+    weekendWarning: "✅ Sábados por la mañana hay Mercado de Agricultores — excelente para desayuno. Para cenar esperar esperas de 30–45 min en restaurantes populares. Reservar con anticipación.",
   },
   {
     name: "Seaport Village",
     category: "Experiencias Urbanas",
     image: "/images/seaport-village.jpg",
-    description:
-      "Paseo frente al mar con tiendas, restaurantes y ambiente relajado. Muy agradable para caminar.",
-    effort: "Bajo",
-    duration: "1–2 h",
-    adult: "Gratis",
-    child: "Gratis",
+    description: "Paseo frente al mar con tiendas, restaurantes y ambiente relajado. Muy agradable para caminar.",
+    effort: "Bajo", duration: "1–2 h",
+    adult: "Gratis", child: "Gratis",
     address: "849 W Harbor Dr, San Diego, CA",
     maps: "https://www.google.com/maps/search/?api=1&query=Seaport+Village",
     site: "https://seaportvillage.com",
+    openHour: 10, peakStart: 12, peakEnd: 16,
+    bestTime: "Mañanas tranquilas o tarde después de las 5pm. Combinar con USS Midway en la misma visita al waterfront.",
+    weekendWarning: "⚠️ Seaport Village en fin de semana tiene más ambiente pero más gente. Mejor visitarlo temprano (10–11am) o como cierre del día después del Midway.",
   },
   {
     name: "Gaslamp Quarter",
     category: "Experiencias Urbanas",
     image: "/images/gaslamp-quarter.jpg",
-    description:
-      "Zona histórica con restaurantes y vida nocturna. Más orientado a adultos.",
-    effort: "Bajo",
-    duration: "2–4 h",
-    adult: "Gratis",
-    child: "-",
+    description: "Zona histórica con restaurantes y vida nocturna. Más orientado a adultos.",
+    effort: "Bajo", duration: "2–4 h",
+    adult: "Gratis", child: "-",
     address: "614 5th Ave, San Diego, CA",
     maps: "https://www.google.com/maps/search/?api=1&query=Gaslamp+Quarter",
     site: "https://gaslamp.org",
+    openHour: 11, peakStart: 20, peakEnd: 23,
+    bestTime: "Entre semana para cenar sin esperas. Viernes y sábados es muy animado pero concurrido. Ideal para noche de adultos.",
+    weekendWarning: "⚠️ Gaslamp Quarter los viernes y sábados es una de las zonas más concurridas de San Diego. Si van en familia llegar antes de las 8pm. Para adultos, la vida nocturna empieza después de las 9pm.",
   },
-
   // 🚗 ALREDEDORES
   {
     name: "Carlsbad Flower Fields",
     category: "Alrededores",
     image: "/images/carlsbad-flower-fields.jpg",
-    description:
-      "Campos de flores en temporada, muy coloridos y fotogénicos.",
-    effort: "Bajo",
-    duration: "1–2 h",
-    adult: "$20–30",
-    child: "$20–30",
+    description: "Campos de flores en temporada, muy coloridos y fotogénicos. Mayo es el último mes — ¡no perdérselo!",
+    effort: "Bajo", duration: "1–2 h",
+    adult: "$20–30", child: "$20–30",
     address: "5704 Paseo Del Norte, Carlsbad, CA",
     maps: "https://www.google.com/maps/search/?api=1&query=Carlsbad+Flower+Fields",
     site: "https://theflowerfields.com",
+    openHour: 9, peakStart: 11, peakEnd: 15,
+    bestTime: "Mañanas de entre semana. Las flores están más frescas antes del mediodía. Muy popular en mayo — ir temprano es clave.",
+    weekendWarning: "⚠️ Carlsbad Flower Fields en mayo es muy popular. Los fines de semana la entrada puede tener 30 min de espera. Abren a las 9am — llegar antes para luz de fotografía y menos gente.",
   },
   {
     name: "Laguna Beach",
     category: "Alrededores",
     image: "/images/laguna-beach.jpg",
-    description:
-      "Playa de alto nivel con calas, arte y paisajes espectaculares. Ideal para paseo premium.",
-    effort: "Bajo",
-    duration: "Medio día",
-    adult: "Gratis",
-    child: "Gratis",
+    description: "Playa de alto nivel con calas, arte y paisajes espectaculares. Ideal para paseo premium.",
+    effort: "Bajo", duration: "Medio día",
+    adult: "Gratis", child: "Gratis",
     address: "Laguna Beach, CA",
     maps: "https://www.google.com/maps/search/?api=1&query=Laguna+Beach",
     site: "https://visitlagunabeach.com",
+    openHour: 8, peakStart: 12, peakEnd: 17,
+    bestTime: "Mañanas de entre semana. Combinar con Outlets at San Clemente (45 min) en el mismo día. Ideal salir temprano desde el hospedaje.",
+    weekendWarning: "⚠️ Laguna Beach en fin de semana tiene tráfico intenso y estacionamiento muy limitado. Llegar antes de las 9am o usar los lotes de estacionamiento pagados. Vale la pena de todas formas.",
   },
   {
     name: "Anza-Borrego Desert",
     category: "Alrededores",
     image: "/images/anza-borrego-desert.jpg",
-    description:
-      "Desierto con esculturas y paisajes únicos. Experiencia diferente, pero más exigente.",
-    effort: "Alto",
-    duration: "Día completo",
-    adult: "Gratis",
-    child: "Gratis",
+    description: "Desierto con esculturas y paisajes únicos. Experiencia diferente, pero más exigente.",
+    effort: "Alto", duration: "Día completo",
+    adult: "Gratis", child: "Gratis",
     address: "Borrego Springs, CA",
     maps: "https://www.google.com/maps/search/?api=1&query=Anza+Borrego",
     site: "https://parks.ca.gov",
+    openHour: 6, peakStart: 11, peakEnd: 15,
+    bestTime: "Salir muy temprano (6–7am) para estar allá antes del calor fuerte. En mayo puede llegar a 38°C al mediodía. Solo para quienes disfrutan aventura.",
+    weekendWarning: "ℹ️ Anza-Borrego es tranquilo cualquier día — es muy remoto. El mayor riesgo es el calor. Fin de semana hay algo más de visitantes en las esculturas pero nada significativo. Llevar mínimo 3L de agua por persona.",
   },
 ];
 
-const people = ["Mauricio", "Rosario", "Eric", "Erika", "Adrián", "Felipe"];
+const people = ["Mauricio", "Rosario", "Eric", "Erika", "Adrián", "Felipe", "Invitado"];
+const TRIP_START = "2026-05-15";
+const TRIP_END   = "2026-05-25";
+const TRIP_DAYS  = ["vie 15", "sáb 16", "dom 17", "lun 18", "mar 19", "mié 20", "jue 21", "vie 22", "sáb 23", "dom 24", "lun 25"];
 
 const getEffortColor = (level: string) => {
   if (level.includes("Bajo")) return "#22c55e";
@@ -524,9 +543,19 @@ export default function Page() {
     } catch(e) {}
   };
 
+  const [selectedDay, setSelectedDay] = useState<string>("");
+
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
+  };
+
+  const getBestTimeForDay = (place: Place, dayLabel: string): string => {
+    const isWeekend = dayLabel.startsWith("sáb") || dayLabel.startsWith("dom");
+    if (isWeekend) {
+      return place.weekendWarning;
+    }
+    return `✅ Entre semana — ${place.bestTime}`;
   };
 
   const addToCalendar = (placeName: string, date: string) => {
@@ -1028,58 +1057,93 @@ const filtered = useMemo(() => {
                   </div>
                 </div>
 
-                <div style={{ fontSize: 14, color: "#334155" }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      paddingBottom: 10,
-                      borderBottom: "1px solid #eef2f7",
-                      marginBottom: 10,
-                    }}
-                  >
-                    <span style={{ color: "#64748b" }}>Adulto</span>
-                    <strong>{place.adult}</strong>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      paddingBottom: 10,
-                      borderBottom: "1px solid #eef2f7",
-                      marginBottom: 10,
-                    }}
-                  >
-                    <span style={{ color: "#64748b" }}>Niño</span>
-                    <strong>{place.child}</strong>
-                  </div>
-                  <div style={{ color: "#475569", lineHeight: 1.6 }}>
-                    📍 {place.address}
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 18 }}>
-                  <a href={place.maps} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "12px 16px", borderRadius: 16, background: "#0f172a", color: "#fff", textDecoration: "none", fontSize: 14, fontWeight: 700 }}>Ver en Maps</a>
-                  <a href={place.site} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "12px 16px", borderRadius: 16, background: "#fff", color: "#0f172a", textDecoration: "none", fontSize: 14, fontWeight: 700, border: "1px solid #dbe3ee" }}>Más info</a>
-                </div>
-
-                {/* Fecha tentativa */}
-                <div style={{ marginTop: 16, padding: 14, background: "#f8fafc", borderRadius: 16, border: "1px solid #e2e8f0" }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.1em" }}>📅 Fecha tentativa</div>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <input
-                      type="date"
-                      value={tentativeDates[place.name] || ""}
-                      onChange={(e) => setTentativeDates(prev => ({ ...prev, [place.name]: e.target.value }))}
-                      style={{ flex: 1, padding: "8px 12px", borderRadius: 10, border: "1px solid #dbe3ee", fontSize: 13, background: "#fff", color: "#334155" }}
-                    />
-                    {tentativeDates[place.name] && (
-                      <button type="button" onClick={() => addToCalendar(place.name, tentativeDates[place.name])}
-                        style={{ padding: "8px 14px", borderRadius: 10, border: "none", background: "#0f172a", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
-                        + Agenda
-                      </button>
+                {/* Precios */}
+                <div style={{ background: "#f8fafc", borderRadius: 16, padding: 14, border: "1px solid #e2e8f0", fontSize: 14, marginBottom: 4 }}>
+                  <div style={{ fontWeight: 700, fontSize: 12, color: "#64748b", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.1em" }}>💰 Precios de entrada</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    <div style={{ background: "#fff", borderRadius: 12, padding: "10px 12px", border: "1px solid #e2e8f0" }}>
+                      <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 2 }}>Precio regular</div>
+                      <div style={{ fontWeight: 700, color: "#334155" }}>Adulto: {place.adult}</div>
+                      <div style={{ color: "#64748b", fontSize: 13 }}>Niño: {place.child}</div>
+                    </div>
+                    {place.adultMWR && (
+                      <div style={{ background: "#fff7ed", borderRadius: 12, padding: "10px 12px", border: "1px solid #fed7aa" }}>
+                        <div style={{ fontSize: 11, color: "#f97316", fontWeight: 700, marginBottom: 2 }}>⭐ Precio MWR</div>
+                        <div style={{ fontWeight: 700, color: "#c2410c" }}>Adulto: {place.adultMWR}</div>
+                        <div style={{ color: "#ea580c", fontSize: 13 }}>Niño: {place.childMWR}</div>
+                      </div>
                     )}
                   </div>
+                  {place.mwrNote && (
+                    <div style={{ marginTop: 8, fontSize: 11, color: "#f97316", fontStyle: "italic" }}>ℹ️ {place.mwrNote}</div>
+                  )}
+                </div>
+
+                <div style={{ color: "#475569", fontSize: 13, marginBottom: 14, lineHeight: 1.6 }}>📍 {place.address}</div>
+
+                {/* Mejor horario dinámico */}
+                <div style={{ background: "#f0fdf4", borderRadius: 16, padding: 14, border: "1px solid #86efac", marginBottom: 14 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#16a34a", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.1em" }}>🕐 Mejor horario</div>
+                  {selectedDay ? (
+                    <p style={{ margin: 0, fontSize: 13, color: "#15803d", lineHeight: 1.6 }}>{getBestTimeForDay(place, selectedDay)}</p>
+                  ) : (
+                    <div>
+                      <p style={{ margin: "0 0 8px", fontSize: 13, color: "#15803d", lineHeight: 1.6 }}>{place.bestTime}</p>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {TRIP_DAYS.map(day => (
+                          <button key={day} type="button" onClick={() => setSelectedDay(day)}
+                            style={{ padding: "4px 10px", borderRadius: 999, border: "1px solid #86efac", background: "#fff", fontSize: 11, fontWeight: 600, color: "#16a34a", cursor: "pointer" }}>
+                            {day}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {selectedDay && (
+                    <button type="button" onClick={() => setSelectedDay("")}
+                      style={{ marginTop: 8, fontSize: 11, color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                      ← Ver todos los días
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
+                  <a href={place.maps} target="_blank" rel="noreferrer"
+                    style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "12px 16px", borderRadius: 16, background: "#0f172a", color: "#fff", textDecoration: "none", fontSize: 14, fontWeight: 700 }}>
+                    🗺 Maps
+                  </a>
+                  <a href={`maps://?q=${encodeURIComponent(place.address)}`}
+                    style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "12px 16px", borderRadius: 16, background: "#fff", color: "#0f172a", textDecoration: "none", fontSize: 14, fontWeight: 700, border: "1px solid #dbe3ee" }}>
+                    🍎 Apple Maps
+                  </a>
+                  <a href={place.site} target="_blank" rel="noreferrer"
+                    style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "12px 16px", borderRadius: 16, background: "#f8fafc", color: "#0f172a", textDecoration: "none", fontSize: 14, fontWeight: 700, border: "1px solid #dbe3ee" }}>
+                    Más info
+                  </a>
+                </div>
+
+                {/* Fecha tentativa — restringida al rango del viaje */}
+                <div style={{ marginTop: 4, padding: 14, background: "#f8fafc", borderRadius: 16, border: "1px solid #e2e8f0" }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.1em" }}>📅 ¿Qué día van? (15–25 mayo)</div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+                    {TRIP_DAYS.map(day => {
+                      const dateMap: Record<string,string> = {"vie 15":"2026-05-15","sáb 16":"2026-05-16","dom 17":"2026-05-17","lun 18":"2026-05-18","mar 19":"2026-05-19","mié 20":"2026-05-20","jue 21":"2026-05-21","vie 22":"2026-05-22","sáb 23":"2026-05-23","dom 24":"2026-05-24","lun 25":"2026-05-25"};
+                      const isSelected = tentativeDates[place.name] === dateMap[day];
+                      return (
+                        <button key={day} type="button"
+                          onClick={() => setTentativeDates(prev => ({ ...prev, [place.name]: isSelected ? "" : dateMap[day] }))}
+                          style={{ padding: "5px 10px", borderRadius: 999, border: isSelected ? "2px solid #0f172a" : "1px solid #e2e8f0", background: isSelected ? "#0f172a" : "#fff", color: isSelected ? "#fff" : "#64748b", fontSize: 11, fontWeight: isSelected ? 700 : 500, cursor: "pointer" }}>
+                          {day}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {tentativeDates[place.name] && (
+                    <button type="button" onClick={() => addToCalendar(place.name, tentativeDates[place.name])}
+                      style={{ width: "100%", padding: "9px", borderRadius: 12, border: "none", background: "#0f172a", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                      📅 Agregar a Google Calendar
+                    </button>
+                  )}
                 </div>
 
                 {/* Comentarios */}
