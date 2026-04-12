@@ -606,6 +606,38 @@ const filtered = useMemo(() => {
                 marquen la selección final del grupo.
               </p>
             </div>
+            <div
+  style={{
+    display: "flex",
+    gap: 10,
+    marginTop: 24,
+    marginBottom: 18,
+    flexWrap: "wrap",
+  }}
+>
+  {["atracciones", "compras"].map((item) => {
+    const active = section === item;
+    return (
+      <button
+        key={item}
+        type="button"
+        onClick={() => setSection(item as "atracciones" | "compras")}
+        style={{
+          padding: "10px 16px",
+          borderRadius: 999,
+          border: active ? "1px solid #0f172a" : "1px solid #dbe3ee",
+          background: active ? "#0f172a" : "#fff",
+          color: active ? "#fff" : "#0f172a",
+          fontSize: 14,
+          fontWeight: 700,
+          cursor: "pointer",
+        }}
+      >
+        {item === "atracciones" ? "Atracciones" : "Compras"}
+      </button>
+    );
+  })}
+</div>
 
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
               <div
@@ -746,6 +778,7 @@ const filtered = useMemo(() => {
           </section>
         )}
 
+        {section === "atracciones" && (
         <section
           style={{
             display: "grid",
@@ -1049,6 +1082,211 @@ const filtered = useMemo(() => {
             </article>
           ))}
         </section>
+        )}
+
+        {section === "compras" && (
+          <section>
+            {/* Filtros */}
+            <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
+              {(["recommended", "nearby", "cheap", "all"] as const).map((f) => {
+                const labels = { recommended: "⭐ Recomendados", nearby: "📍 Más cercanos", cheap: "💰 Más baratos", all: "Ver todos" };
+                const active = shoppingFilter === f;
+                return (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => setShoppingFilter(f)}
+                    style={{
+                      padding: "10px 16px",
+                      borderRadius: 999,
+                      border: active ? "1px solid #0f172a" : "1px solid #dbe3ee",
+                      background: active ? "#0f172a" : "#fff",
+                      color: active ? "#fff" : "#0f172a",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {labels[f]}
+                  </button>
+                );
+              })}
+              <input
+                value={shoppingQuery}
+                onChange={(e) => setShoppingQuery(e.target.value)}
+                placeholder="Buscar tienda..."
+                style={{
+                  height: 44,
+                  borderRadius: 16,
+                  border: "1px solid #dbe3ee",
+                  padding: "0 16px",
+                  fontSize: 14,
+                  outline: "none",
+                  background: "#f8fafc",
+                  minWidth: 200,
+                }}
+              />
+            </div>
+
+            {/* Cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24 }}>
+              {shoppingPlaces
+                .filter((sp) => {
+                  const q = shoppingQuery.trim().toLowerCase();
+                  const matchesQuery = !q || sp.name.toLowerCase().includes(q) || sp.description.toLowerCase().includes(q) || sp.category.toLowerCase().includes(q);
+                  const matchesFilter =
+                    shoppingFilter === "all" ? true :
+                    shoppingFilter === "recommended" ? sp.priority === "alta" :
+                    shoppingFilter === "nearby" ? sp.distance <= 15 :
+                    shoppingFilter === "cheap" ? sp.priceLevel === "barato" : true;
+                  return matchesQuery && matchesFilter;
+                })
+                .sort((a, b) =>
+                  shoppingFilter === "nearby" ? a.distance - b.distance :
+                  shoppingFilter === "cheap" ? (a.priceLevel === "barato" ? -1 : 1) :
+                  (a.priority === "alta" ? -1 : b.priority === "alta" ? 1 : 0)
+                )
+                .map((sp) => {
+                  const state = shoppingState[sp.name] || {};
+                  const toggleShopping = (field: "interested" | "wantToGo" | "visited") => {
+                    setShoppingState((prev) => ({
+                      ...prev,
+                      [sp.name]: { ...(prev[sp.name] || {}), [field]: !prev[sp.name]?.[field] },
+                    }));
+                  };
+                  const priceColors: Record<string, string> = { barato: "#22c55e", medio: "#eab308", caro: "#ef4444" };
+                  const categoryLabels: Record<string, string> = { outlet: "Outlet", mall: "Mall", souvenirs: "Souvenirs", premium: "Premium", discount: "Descuento" };
+                  return (
+                    <article
+                      key={sp.name}
+                      style={{
+                        background: "#fff",
+                        border: state.visited ? "2px solid #22c55e" : "1px solid #e2e8f0",
+                        borderRadius: 24,
+                        overflow: "hidden",
+                        boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
+                        opacity: state.visited ? 0.85 : 1,
+                      }}
+                    >
+                      <div style={{ position: "relative", background: "#f1f5f9", height: 180, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <img
+                          src={sp.image}
+                          alt={sp.name}
+                          onError={(e) => { (e.target as HTMLImageElement).src = "/images/placeholder.jpg"; }}
+                          style={{ width: "100%", height: 180, objectFit: "cover", display: "block" }}
+                        />
+                        <div style={{ position: "absolute", top: 14, left: 14, background: "rgba(255,255,255,0.92)", padding: "6px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, color: "#334155", backdropFilter: "blur(8px)" }}>
+                          {categoryLabels[sp.category] || sp.category}
+                        </div>
+                        {sp.priority === "alta" && (
+                          <div style={{ position: "absolute", top: 14, right: 14, background: "#0f172a", color: "#fff", padding: "6px 12px", borderRadius: 999, fontSize: 11, fontWeight: 700 }}>
+                            ⭐ Recomendado
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{ padding: 20 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                          <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800, lineHeight: 1.2 }}>{sp.name}</h3>
+                          <div style={{ display: "flex", gap: 6, flexShrink: 0, marginLeft: 10 }}>
+                            <span style={{ padding: "4px 10px", borderRadius: 999, background: priceColors[sp.priceLevel], color: "#fff", fontSize: 11, fontWeight: 700 }}>
+                              {sp.priceLevel === "barato" ? "💰 Barato" : sp.priceLevel === "medio" ? "💳 Medio" : "💎 Caro"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <p style={{ color: "#475569", fontSize: 14, lineHeight: 1.6, marginTop: 0, marginBottom: 14 }}>{sp.description}</p>
+
+                        <div style={{ fontSize: 13, color: "#64748b", marginBottom: 16 }}>
+                          🚗 {sp.distance} min · 📍 {sp.address}
+                        </div>
+
+                        {/* Botones de interacción */}
+                        <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+                          <button
+                            type="button"
+                            onClick={() => toggleShopping("interested")}
+                            style={{
+                              flex: 1,
+                              minWidth: 90,
+                              padding: "10px 8px",
+                              borderRadius: 14,
+                              border: state.interested ? "2px solid #f97316" : "1px solid #e2e8f0",
+                              background: state.interested ? "#fff7ed" : "#f8fafc",
+                              color: state.interested ? "#f97316" : "#64748b",
+                              fontSize: 13,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                            }}
+                          >
+                            ❤️ Me interesa
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleShopping("wantToGo")}
+                            style={{
+                              flex: 1,
+                              minWidth: 90,
+                              padding: "10px 8px",
+                              borderRadius: 14,
+                              border: state.wantToGo ? "2px solid #6366f1" : "1px solid #e2e8f0",
+                              background: state.wantToGo ? "#eef2ff" : "#f8fafc",
+                              color: state.wantToGo ? "#6366f1" : "#64748b",
+                              fontSize: 13,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                            }}
+                          >
+                            🛍 Quiero ir
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleShopping("visited")}
+                            style={{
+                              flex: 1,
+                              minWidth: 90,
+                              padding: "10px 8px",
+                              borderRadius: 14,
+                              border: state.visited ? "2px solid #22c55e" : "1px solid #e2e8f0",
+                              background: state.visited ? "#f0fdf4" : "#f8fafc",
+                              color: state.visited ? "#22c55e" : "#64748b",
+                              fontSize: 13,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                            }}
+                          >
+                            ✅ Visitado
+                          </button>
+                        </div>
+
+                        <a
+                          href={sp.maps}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            padding: "12px 16px",
+                            borderRadius: 16,
+                            background: "#0f172a",
+                            color: "#fff",
+                            textDecoration: "none",
+                            fontSize: 14,
+                            fontWeight: 700,
+                            width: "100%",
+                            boxSizing: "border-box",
+                          }}
+                        >
+                          Ver en Maps
+                        </a>
+                      </div>
+                    </article>
+                  );
+                })}
+            </div>
+          </section>
+        )}
       </div>
     </main>
   );
