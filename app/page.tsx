@@ -724,130 +724,69 @@ const filtered = useMemo(() => {
             marginBottom: 24,
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              gap: 20,
-              justifyContent: "space-between",
-              alignItems: "flex-end",
-              flexWrap: "wrap",
-            }}
-          >
-            <div style={{ maxWidth: 760 }}>
-              <div
-                style={{
-                  fontSize: 12,
-                  letterSpacing: "0.18em",
-                  textTransform: "uppercase",
-                  color: "#64748b",
-                  marginBottom: 10,
-                  fontWeight: 700,
-                }}
-              >
-                San Diego Family Trip
+          {/* Sesión activa — lo primero que ve el usuario */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg, #0f172a, #1e3a5f)", borderRadius: 18, padding: "14px 18px", marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ fontSize: 28 }}>👋</span>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Hola de nuevo</div>
+                <div style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>{currentPerson} — ¡tu voto cuenta!</div>
               </div>
-              <h1
-                style={{
-                  fontSize: 42,
-                  lineHeight: 1.05,
-                  margin: 0,
-                  fontWeight: 800,
-                }}
-              >
-                Selección visual de atracciones
-              </h1>
-              <p
-                style={{
-                  marginTop: 14,
-                  marginBottom: 0,
-                  fontSize: 18,
-                  lineHeight: 1.6,
-                  color: "#475569",
-                }}
-              >
-                Revisen las opciones, vean las imágenes, voten por persona y
-                marquen la selección final del grupo.
-              </p>
             </div>
-            {/* Section switcher (top - compact) */}
-            <div style={{ display: "flex", gap: 0, marginTop: 24, marginBottom: 18, background: "#f1f5f9", borderRadius: 20, padding: 4, width: "fit-content" }}>
-              {([["atracciones", "🗺️ Atracciones"], ["compras", "🛍️ Compras"]] as const).map(([item, label]) => {
-                const active = section === item;
-                return (
-                  <button key={item} type="button" onClick={() => { setSection(item); playSound("section"); }}
-                    style={{ padding: "12px 24px", borderRadius: 16, border: "none", background: active ? "#0f172a" : "transparent", color: active ? "#fff" : "#64748b", fontSize: 15, fontWeight: 700, cursor: "pointer", transition: "all 0.2s", boxShadow: active ? "0 2px 8px rgba(15,23,42,0.18)" : "none" }}>
-                    {label}
-                  </button>
-                );
-              })}
+            <button
+              type="button"
+              onClick={() => { setCurrentPerson(null); setSubmitted(false); }}
+              style={{ padding: "7px 14px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.8)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+            >
+              Cambiar
+            </button>
+          </div>
+
+          <div style={{ marginBottom: 6 }}>
+            <div style={{ fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: "#64748b", marginBottom: 8, fontWeight: 700 }}>
+              San Diego Family Trip 🌊
             </div>
+            <h1 style={{ fontSize: 36, lineHeight: 1.1, margin: "0 0 10px", fontWeight: 800 }}>
+              ¿A dónde vamos juntos?
+            </h1>
+            <p style={{ margin: 0, fontSize: 16, lineHeight: 1.6, color: "#475569" }}>
+              Explorá los lugares, votá los que más te emocionan y ayudá a armar el viaje perfecto para toda la familia.
+            </p>
+          </div>
 
-            <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-              <div
-                style={{
-                  background: "#fff",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: 20,
-                  padding: "16px 18px",
-                  minWidth: 170,
-                }}
-              >
-                <div style={{ fontSize: 28, fontWeight: 800 }}>
-                  {Object.values(votes).reduce(
-                    (acc, current) =>
-                      acc + Object.values(current || {}).filter(Boolean).length,
-                    0
-                  )}
-                </div>
-                <div style={{ color: "#64748b", fontSize: 14 }}>
-                  votos emitidos
-                </div>
-              </div>
+          {/* Section switcher */}
+          <div style={{ display: "flex", gap: 0, marginTop: 20, marginBottom: 20, background: "#f1f5f9", borderRadius: 20, padding: 4, width: "fit-content" }}>
+            {([["atracciones", "🗺️ Atracciones"], ["compras", "🛍️ Compras"]] as const).map(([item, label]) => {
+              const active = section === item;
+              return (
+                <button key={item} type="button" onClick={() => { setSection(item); playSound("section"); }}
+                  style={{ padding: "12px 24px", borderRadius: 16, border: "none", background: active ? "#0f172a" : "transparent", color: active ? "#fff" : "#64748b", fontSize: 15, fontWeight: 700, cursor: "pointer", transition: "all 0.2s", boxShadow: active ? "0 2px 8px rgba(15,23,42,0.18)" : "none" }}>
+                  {label}
+                </button>
+              );
+            })}
+          </div>
 
-              <div
-                style={{
-                  background: "#fff",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: 20,
-                  padding: "16px 18px",
-                  minWidth: 170,
-                }}
-              >
-                <div style={{ fontSize: 28, fontWeight: 800 }}>
-                  {finalList.length}
-                </div>
-                <div style={{ color: "#64748b", fontSize: 14 }}>
-                  selección final
-                </div>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 20 }}>
+            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 16, padding: "14px 18px", minWidth: 140 }}>
+              <div style={{ fontSize: 26, fontWeight: 800 }}>
+                {Object.values(votes).reduce((acc, current) => acc + Object.values(current || {}).filter(Boolean).length, 0)}
               </div>
+              <div style={{ color: "#64748b", fontSize: 13 }}>votos emitidos</div>
+            </div>
+            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 16, padding: "14px 18px", minWidth: 140 }}>
+              <div style={{ fontSize: 26, fontWeight: 800 }}>{finalList.length}</div>
+              <div style={{ color: "#64748b", fontSize: 13 }}>confirmados por el grupo</div>
             </div>
           </div>
 
-          {/* Search + session — stacks on mobile */}
-          <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 12 }}>
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="🔍 Buscar lugar, categoría..."
-              style={{ width: "100%", boxSizing: "border-box", height: 48, borderRadius: 16, border: "1px solid #dbe3ee", padding: "0 16px", fontSize: 15, outline: "none", background: "#f8fafc" }}
-            />
-            {/* Sesión activa — horizontal compact bar */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 16, padding: "10px 16px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em" }}>Votando como</span>
-                <span style={{ padding: "6px 14px", borderRadius: 999, background: "#0f172a", color: "#fff", fontSize: 14, fontWeight: 700 }}>
-                  👤 {currentPerson}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => { setCurrentPerson(null); setSubmitted(false); }}
-                style={{ padding: "6px 12px", borderRadius: 999, border: "1px solid #e2e8f0", background: "#f8fafc", color: "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
-              >
-                Cambiar
-              </button>
-            </div>
-          </div>
+          {/* Buscador */}
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="🔍 Buscar lugar, categoría..."
+            style={{ width: "100%", boxSizing: "border-box", height: 48, borderRadius: 16, border: "1px solid #dbe3ee", padding: "0 16px", fontSize: 15, outline: "none", background: "#f8fafc" }}
+          />
         </section>
 
         {finalList.length > 0 && (
@@ -1397,58 +1336,66 @@ const filtered = useMemo(() => {
         </div>
       )}
 
-      {/* Floating buttons */}
-      <div style={{ position: "fixed", bottom: 28, right: 28, zIndex: 1000, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12 }}>
-        {/* WhatsApp */}
-        <a href={WHATSAPP_GROUP} target="_blank" rel="noreferrer"
-          style={{ display: "flex", alignItems: "center", gap: 8, padding: "13px 20px", borderRadius: 20, background: "#25D366", color: "#fff", textDecoration: "none", fontSize: 14, fontWeight: 700, boxShadow: "0 4px 20px rgba(37,211,102,0.35)" }}>
-          <span style={{ fontSize: 18 }}>💬</span> WhatsApp
-        </a>
-        {/* Submit */}
-        {submitted ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 22px", borderRadius: 20, background: "#f0fdf4", border: "1px solid #86efac", color: "#16a34a", fontSize: 14, fontWeight: 700, boxShadow: "0 4px 24px rgba(0,0,0,0.12)" }}>
-            ✅ Votos enviados
-          </div>
-        ) : (
-          <button type="button" onClick={submitVotes}
-            disabled={submitting || Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length === 0}
-            style={{
-              padding: "16px 28px", borderRadius: 20, border: "none",
-              background: Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length === 0 ? "#94a3b8" : "#f97316",
-              color: "#fff", fontSize: 15, fontWeight: 700,
-              cursor: Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length === 0 ? "not-allowed" : "pointer",
-              boxShadow: Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length === 0 ? "none" : "0 4px 24px rgba(249,115,22,0.4)",
-              display: "flex", alignItems: "center", gap: 10,
-            }}>
-            {submitting ? "Enviando..." : (
-              <>
-                <span>📤 Enviar mis votos</span>
-                {Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length > 0 && (
-                  <span style={{ background: "rgba(255,255,255,0.25)", borderRadius: 999, padding: "2px 10px", fontSize: 13 }}>
-                    {Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length}
-                  </span>
-                )}
-              </>
-            )}
-          </button>
-        )}
-      </div>
-      {/* Bottom nav bar - fixed tabs */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 900, background: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)", borderTop: "1px solid #e2e8f0", display: "flex", padding: "8px 0 max(8px, env(safe-area-inset-bottom))" }}>
-        {([["atracciones","🗺️","Atracciones"],["compras","🛍️","Compras"]] as const).map(([item, emoji, label]) => {
-          const active = section === item;
-          return (
-            <button key={item} type="button" onClick={() => { setSection(item); playSound("section"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-              style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 0", border: "none", background: "none", cursor: "pointer" }}>
-              <span style={{ fontSize: 22 }}>{emoji}</span>
-              <span style={{ fontSize: 11, fontWeight: active ? 800 : 500, color: active ? "#0f172a" : "#94a3b8" }}>{label}</span>
-              {active && <div style={{ width: 20, height: 3, borderRadius: 999, background: "#0f172a" }} />}
+      {/* Bottom bar — tabs izquierda, acciones derecha */}
+      <div style={{
+        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 1000,
+        background: "rgba(255,255,255,0.97)", backdropFilter: "blur(16px)",
+        borderTop: "1px solid #e2e8f0",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "10px 16px max(10px, env(safe-area-inset-bottom))",
+        gap: 12,
+      }}>
+        {/* Izquierda — tabs de sección */}
+        <div style={{ display: "flex", gap: 4, background: "#f1f5f9", borderRadius: 16, padding: 3 }}>
+          {([["atracciones","🗺️","Atracciones"],["compras","🛍️","Compras"]] as const).map(([item, emoji, label]) => {
+            const active = section === item;
+            return (
+              <button key={item} type="button"
+                onClick={() => { setSection(item); playSound("section"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1, padding: "6px 14px", borderRadius: 13, border: "none", background: active ? "#0f172a" : "transparent", color: active ? "#fff" : "#94a3b8", cursor: "pointer", minWidth: 70 }}>
+                <span style={{ fontSize: 18 }}>{emoji}</span>
+                <span style={{ fontSize: 10, fontWeight: active ? 800 : 500 }}>{label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Derecha — Enviar votos + WhatsApp */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+          {/* Enviar mis votos — primero */}
+          {submitted ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 14, background: "#f0fdf4", border: "1px solid #86efac", color: "#16a34a", fontSize: 13, fontWeight: 700 }}>
+              ✅ Votos enviados
+            </div>
+          ) : (
+            <button type="button" onClick={submitVotes}
+              disabled={submitting || Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length === 0}
+              style={{
+                padding: "9px 16px", borderRadius: 14, border: "none",
+                background: Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length === 0 ? "#e2e8f0" : "#f97316",
+                color: Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length === 0 ? "#94a3b8" : "#fff",
+                fontSize: 13, fontWeight: 700,
+                cursor: Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length === 0 ? "not-allowed" : "pointer",
+                boxShadow: Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length === 0 ? "none" : "0 3px 14px rgba(249,115,22,0.35)",
+                display: "flex", alignItems: "center", gap: 7,
+              }}>
+              <span>📤 Enviar votos</span>
+              {Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length > 0 && (
+                <span style={{ background: "rgba(255,255,255,0.25)", borderRadius: 999, padding: "1px 8px", fontSize: 12 }}>
+                  {Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length}
+                </span>
+              )}
             </button>
-          );
-        })}
+          )}
+          {/* WhatsApp — segundo */}
+          <a href={WHATSAPP_GROUP} target="_blank" rel="noreferrer"
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 14, background: "#25D366", color: "#fff", textDecoration: "none", fontSize: 13, fontWeight: 700, boxShadow: "0 3px 12px rgba(37,211,102,0.3)" }}>
+            <span>💬</span> WhatsApp
+          </a>
+        </div>
       </div>
-      {/* Spacer for bottom nav */}
-      <div style={{ height: 70 }} />
+      {/* Spacer for bottom bar */}
+      <div style={{ height: 110 }} />
     </main>
   );
 }
