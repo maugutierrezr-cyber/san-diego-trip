@@ -489,6 +489,8 @@ const shoppingPlaces: ShoppingPlace[] = [
   },
 ];
 
+type Comment = { person: string; text: string; reactions: Record<string, string[]>; timestamp: string; };
+
 export default function Page() {
   const [currentPerson, setCurrentPerson] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -501,10 +503,62 @@ export default function Page() {
   const [shoppingQuery, setShoppingQuery] = useState("");
   const [shoppingFilter, setShoppingFilter] = useState<"all" | "nearby" | "cheap" | "recommended">("recommended");
   const [shoppingState, setShoppingState] = useState<ShoppingState>({});
+  const [showSectionModal, setShowSectionModal] = useState(false);
+  const [tentativeDates, setTentativeDates] = useState<Record<string, string>>({});
+  const [comments, setComments] = useState<Record<string, Comment[]>>({});
+  const [commentDraft, setCommentDraft] = useState<Record<string, string>>({});
+  const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
+  const WHATSAPP_GROUP = "https://chat.whatsapp.com/Goi6jhXNz9nH9OkOkPkKQD?mode=gi_t";
+  const REACTIONS = ["👍","❤️","😂","😮","🔥"];
+
+  const playSound = (type: "vote" | "submit" | "section") => {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      if (type === "vote") { o.frequency.setValueAtTime(660, ctx.currentTime); o.frequency.setValueAtTime(880, ctx.currentTime + 0.1); g.gain.setValueAtTime(0.15, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3); }
+      if (type === "submit") { o.frequency.setValueAtTime(523, ctx.currentTime); o.frequency.setValueAtTime(659, ctx.currentTime + 0.1); o.frequency.setValueAtTime(784, ctx.currentTime + 0.2); g.gain.setValueAtTime(0.15, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5); }
+      if (type === "section") { o.frequency.setValueAtTime(440, ctx.currentTime); o.frequency.setValueAtTime(550, ctx.currentTime + 0.08); g.gain.setValueAtTime(0.1, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25); }
+      o.start(); o.stop(ctx.currentTime + 0.5);
+    } catch(e) {}
+  };
 
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
+  };
+
+  const addToCalendar = (placeName: string, date: string) => {
+    if (!date) return;
+    const d = new Date(date);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const fmt = (dt: Date) => `${dt.getFullYear()}${pad(dt.getMonth()+1)}${pad(dt.getDate())}T100000`;
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("🌊 " + placeName + " - San Diego Trip")}&dates=${fmt(d)}/${fmt(d)}&details=${encodeURIComponent("Lugar votado por el grupo para el viaje familiar a San Diego")}&location=${encodeURIComponent(placeName + ", San Diego, CA")}`;
+    window.open(url, "_blank");
+  };
+
+  const addComment = (placeName: string) => {
+    const text = (commentDraft[placeName] || "").trim();
+    if (!text || !currentPerson) return;
+    const newComment: Comment = { person: currentPerson, text, reactions: {}, timestamp: new Date().toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }) };
+    setComments(prev => ({ ...prev, [placeName]: [...(prev[placeName] || []), newComment] }));
+    setCommentDraft(prev => ({ ...prev, [placeName]: "" }));
+    playSound("vote");
+  };
+
+  const addReaction = (placeName: string, commentIdx: number, emoji: string) => {
+    if (!currentPerson) return;
+    setComments(prev => {
+      const updated = [...(prev[placeName] || [])];
+      const c = { ...updated[commentIdx] };
+      const arr = c.reactions[emoji] ? [...c.reactions[emoji]] : [];
+      const i = arr.indexOf(currentPerson);
+      if (i >= 0) arr.splice(i, 1); else arr.push(currentPerson);
+      c.reactions = { ...c.reactions, [emoji]: arr };
+      updated[commentIdx] = c;
+      return { ...prev, [placeName]: updated };
+    });
   };
 
 const filtered = useMemo(() => {
@@ -535,8 +589,9 @@ const filtered = useMemo(() => {
       ...prev,
       [placeName]: { ...(prev[placeName] || {}), [currentPerson]: newValue },
     }));
+    playSound("vote");
     if (newValue) {
-      showToast(`✅ Voto registrado: ${placeName}`);
+      showToast(`✅ Voto por: ${placeName}`);
     } else {
       showToast(`↩️ Voto removido: ${placeName}`);
     }
@@ -562,7 +617,9 @@ const filtered = useMemo(() => {
         )
       );
       setSubmitted(true);
+      playSound("submit");
       showToast(`🎉 ¡Votos de ${currentPerson} enviados con éxito!`);
+      setShowSectionModal(true);
     } catch (error) {
       console.error("Error enviando votos:", error);
       showToast("❌ Error al enviar. Intentá de nuevo.");
@@ -579,11 +636,20 @@ const filtered = useMemo(() => {
   // ── Pantalla de selección de persona ───────────────────────
   if (!currentPerson) {
     return (
-      <main style={{ minHeight: "100vh", background: "#f6f7fb", color: "#0f172a", fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif', display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 28, padding: "48px 40px", boxShadow: "0 8px 40px rgba(15,23,42,0.10)", maxWidth: 480, width: "100%", textAlign: "center" }}>
-          <div style={{ fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: "#64748b", marginBottom: 10, fontWeight: 700 }}>San Diego Family Trip</div>
-          <h1 style={{ fontSize: 32, fontWeight: 800, margin: "0 0 10px" }}>¿Quién sos?</h1>
-          <p style={{ color: "#64748b", fontSize: 15, marginBottom: 32 }}>Seleccioná tu nombre para registrar tus votos y preferencias.</p>
+      <main style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #0f172a 100%)", color: "#0f172a", fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif', display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+        <div style={{ maxWidth: 520, width: "100%", textAlign: "center" }}>
+
+          {/* Emoji y título */}
+          <div style={{ fontSize: 52, marginBottom: 16 }}>🌊</div>
+          <div style={{ fontSize: 12, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", marginBottom: 12, fontWeight: 700 }}>San Diego Family Trip</div>
+          <h1 style={{ fontSize: 36, fontWeight: 800, margin: "0 0 12px", color: "#fff", lineHeight: 1.1 }}>¡Bienvenido a la aventura!</h1>
+          <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 16, marginBottom: 10, lineHeight: 1.6 }}>
+            Estamos armando juntos el viaje perfecto.<br/>
+            Tu opinión cuenta — cada voto hace la diferencia.
+          </p>
+          <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 36 }}>Seleccioná tu nombre para empezar 👇</p>
+
+          {/* Tarjetas de personas */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             {people.map((person) => (
               <button
@@ -591,23 +657,28 @@ const filtered = useMemo(() => {
                 type="button"
                 onClick={() => setCurrentPerson(person)}
                 style={{
-                  padding: "18px 12px",
-                  borderRadius: 18,
-                  border: "1px solid #e2e8f0",
-                  background: "#f8fafc",
-                  color: "#0f172a",
-                  fontSize: 16,
+                  padding: "20px 12px",
+                  borderRadius: 20,
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  background: "rgba(255,255,255,0.08)",
+                  color: "#fff",
+                  fontSize: 17,
                   fontWeight: 700,
                   cursor: "pointer",
+                  backdropFilter: "blur(8px)",
                   transition: "all 0.15s",
                 }}
-                onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.background = "#0f172a"; (e.target as HTMLButtonElement).style.color = "#fff"; }}
-                onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.background = "#f8fafc"; (e.target as HTMLButtonElement).style.color = "#0f172a"; }}
+                onMouseEnter={(e) => { const b = e.target as HTMLButtonElement; b.style.background = "rgba(255,255,255,0.22)"; b.style.transform = "translateY(-2px)"; }}
+                onMouseLeave={(e) => { const b = e.target as HTMLButtonElement; b.style.background = "rgba(255,255,255,0.08)"; b.style.transform = "translateY(0)"; }}
               >
-                {person}
+                👤 {person}
               </button>
             ))}
           </div>
+
+          <p style={{ color: "rgba(255,255,255,0.25)", fontSize: 12, marginTop: 28 }}>
+            Podés cambiar de participante en cualquier momento
+          </p>
         </div>
       </main>
     );
@@ -698,38 +769,18 @@ const filtered = useMemo(() => {
                 marquen la selección final del grupo.
               </p>
             </div>
-            <div
-  style={{
-    display: "flex",
-    gap: 10,
-    marginTop: 24,
-    marginBottom: 18,
-    flexWrap: "wrap",
-  }}
->
-  {["atracciones", "compras"].map((item) => {
-    const active = section === item;
-    return (
-      <button
-        key={item}
-        type="button"
-        onClick={() => setSection(item as "atracciones" | "compras")}
-        style={{
-          padding: "10px 16px",
-          borderRadius: 999,
-          border: active ? "1px solid #0f172a" : "1px solid #dbe3ee",
-          background: active ? "#0f172a" : "#fff",
-          color: active ? "#fff" : "#0f172a",
-          fontSize: 14,
-          fontWeight: 700,
-          cursor: "pointer",
-        }}
-      >
-        {item === "atracciones" ? "Atracciones" : "Compras"}
-      </button>
-    );
-  })}
-</div>
+            {/* Section switcher (top - compact) */}
+            <div style={{ display: "flex", gap: 0, marginTop: 24, marginBottom: 18, background: "#f1f5f9", borderRadius: 20, padding: 4, width: "fit-content" }}>
+              {([["atracciones", "🗺️ Atracciones"], ["compras", "🛍️ Compras"]] as const).map(([item, label]) => {
+                const active = section === item;
+                return (
+                  <button key={item} type="button" onClick={() => { setSection(item); playSound("section"); }}
+                    style={{ padding: "12px 24px", borderRadius: 16, border: "none", background: active ? "#0f172a" : "transparent", color: active ? "#fff" : "#64748b", fontSize: 15, fontWeight: 700, cursor: "pointer", transition: "all 0.2s", boxShadow: active ? "0 2px 8px rgba(15,23,42,0.18)" : "none" }}>
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
 
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
               <div
@@ -795,77 +846,20 @@ const filtered = useMemo(() => {
               }}
             />
 
-            <div
-              style={{
-                border: "1px solid #e2e8f0",
-                borderRadius: 20,
-                padding: 16,
-                background: "#fff",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: "#334155",
-                  marginBottom: 10,
-                }}
-              >
-                Participantes con voto
-              </div>
-
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                {people.map((person) => (
-                  <span
-                    key={person}
-                    style={{
-                      padding: "8px 12px",
-                      borderRadius: 999,
-                      background: person === currentPerson ? "#0f172a" : "#f8fafc",
-                      border: person === currentPerson ? "1px solid #0f172a" : "1px solid #e2e8f0",
-                      fontSize: 13,
-                      color: person === currentPerson ? "#fff" : "#334155",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {person === currentPerson ? `👤 ${person}` : person}
-                  </span>
-                ))}
+            {/* Sesión activa */}
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 20, padding: 16, background: "#fff" }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#64748b", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.1em" }}>Votando como</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                <span style={{ padding: "10px 18px", borderRadius: 999, background: "#0f172a", color: "#fff", fontSize: 15, fontWeight: 700 }}>
+                  👤 {currentPerson}
+                </span>
                 <button
                   type="button"
                   onClick={() => { setCurrentPerson(null); setSubmitted(false); }}
-                  style={{ padding: "8px 12px", borderRadius: 999, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                  style={{ padding: "8px 14px", borderRadius: 999, border: "1px solid #e2e8f0", background: "#f8fafc", color: "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                 >
                   Cambiar
                 </button>
-              </div>
-
-              {/* Botón enviar votos */}
-              <div style={{ marginTop: 16 }}>
-                {submitted ? (
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 20px", borderRadius: 16, background: "#f0fdf4", border: "1px solid #86efac", color: "#16a34a", fontSize: 14, fontWeight: 700 }}>
-                    ✅ Votos de {currentPerson} enviados correctamente
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={submitVotes}
-                    disabled={submitting || Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length === 0}
-                    style={{
-                      padding: "12px 24px",
-                      borderRadius: 16,
-                      border: "none",
-                      background: submitting ? "#94a3b8" : "#0f172a",
-                      color: "#fff",
-                      fontSize: 14,
-                      fontWeight: 700,
-                      cursor: submitting ? "not-allowed" : "pointer",
-                      opacity: Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length === 0 ? 0.5 : 1,
-                    }}
-                  >
-                    {submitting ? "Enviando..." : `Enviar mis votos (${Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length} lugares)`}
-                  </button>
-                )}
               </div>
             </div>
           </div>
@@ -1033,31 +1027,15 @@ const filtered = useMemo(() => {
   checked={!!finalSelection[place.name]}
   onChange={async () => {
     const newFinal = !finalSelection[place.name];
-
-    setFinalSelection((prev) => ({
-      ...prev,
-      [place.name]: newFinal,
-    }));
-
+    setFinalSelection((prev) => ({ ...prev, [place.name]: newFinal }));
+    playSound("section");
+    showToast(newFinal ? `🏆 ${place.name} confirmado para el grupo` : `↩️ ${place.name} removido de la selección final`);
     try {
-      await fetch(SHEETS_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "text/plain;charset=utf-8",
-        },
-        body: JSON.stringify({
-          place: place.name,
-          person: "SELECCION_FINAL",
-          vote: false,
-          final: newFinal,
-        }),
-      });
-    } catch (error) {
-      console.error("Error guardando selección final:", error);
-    }
+      await fetch(SHEETS_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ place: place.name, person: "SELECCION_FINAL", vote: false, final: newFinal }) });
+    } catch (error) { console.error("Error guardando selección final:", error); }
   }}
 />
-                    Final
+                    ✅ Confirmado
                   </label>
                 </div>
 
@@ -1093,36 +1071,36 @@ const filtered = useMemo(() => {
                     Votos por persona
                   </div>
 
-                  <div
+                  {/* Mi voto */}
+                  <button
+                    type="button"
+                    onClick={() => toggleVote(place.name)}
                     style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: 10,
+                      width: "100%",
+                      padding: "12px",
+                      borderRadius: 14,
+                      border: (votes[place.name] || {})[currentPerson!] ? "2px solid #0f172a" : "1px solid #e2e8f0",
+                      background: (votes[place.name] || {})[currentPerson!] ? "#0f172a" : "#f8fafc",
+                      color: (votes[place.name] || {})[currentPerson!] ? "#fff" : "#64748b",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      marginBottom: 12,
                     }}
                   >
-                    {people.map((person) => (
-                      <label
-                        key={`${place.name}-${person}`}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                          background: "#fff",
-                          border: "1px solid #e2e8f0",
-                          borderRadius: 14,
-                          padding: "10px 12px",
-                          fontSize: 14,
-                          color: "#334155",
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={!!(votes[place.name] || {})[person]}
-                          onChange={() => toggleVote(place.name)}
-                        />
-                        {person}
-                      </label>
+                    {(votes[place.name] || {})[currentPerson!] ? "✅ Votaste este lugar" : "＋ Agregar a mis votos"}
+                  </button>
+
+                  {/* Quién ha votado */}
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {people.filter(p => (votes[place.name] || {})[p]).map(p => (
+                      <span key={p} style={{ padding: "4px 10px", borderRadius: 999, background: "#f0fdf4", border: "1px solid #86efac", fontSize: 12, color: "#16a34a", fontWeight: 600 }}>
+                        ✓ {p}
+                      </span>
                     ))}
+                    {people.filter(p => (votes[place.name] || {})[p]).length === 0 && (
+                      <span style={{ fontSize: 12, color: "#94a3b8" }}>Nadie ha votado este lugar aún</span>
+                    )}
                   </div>
                 </div>
 
@@ -1156,54 +1134,72 @@ const filtered = useMemo(() => {
                   </div>
                 </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 10,
-                    flexWrap: "wrap",
-                    marginTop: 18,
-                  }}
-                >
-                  <a
-                    href={place.maps}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      padding: "12px 16px",
-                      borderRadius: 16,
-                      background: "#0f172a",
-                      color: "#fff",
-                      textDecoration: "none",
-                      fontSize: 14,
-                      fontWeight: 700,
-                    }}
-                  >
-                    Ver en Maps
-                  </a>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 18 }}>
+                  <a href={place.maps} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "12px 16px", borderRadius: 16, background: "#0f172a", color: "#fff", textDecoration: "none", fontSize: 14, fontWeight: 700 }}>Ver en Maps</a>
+                  <a href={place.site} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "12px 16px", borderRadius: 16, background: "#fff", color: "#0f172a", textDecoration: "none", fontSize: 14, fontWeight: 700, border: "1px solid #dbe3ee" }}>Más info</a>
+                </div>
 
-                  <a
-                    href={place.site}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      padding: "12px 16px",
-                      borderRadius: 16,
-                      background: "#fff",
-                      color: "#0f172a",
-                      textDecoration: "none",
-                      fontSize: 14,
-                      fontWeight: 700,
-                      border: "1px solid #dbe3ee",
-                    }}
-                  >
-                    Más info
-                  </a>
+                {/* Fecha tentativa */}
+                <div style={{ marginTop: 16, padding: 14, background: "#f8fafc", borderRadius: 16, border: "1px solid #e2e8f0" }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.1em" }}>📅 Fecha tentativa</div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <input
+                      type="date"
+                      value={tentativeDates[place.name] || ""}
+                      onChange={(e) => setTentativeDates(prev => ({ ...prev, [place.name]: e.target.value }))}
+                      style={{ flex: 1, padding: "8px 12px", borderRadius: 10, border: "1px solid #dbe3ee", fontSize: 13, background: "#fff", color: "#334155" }}
+                    />
+                    {tentativeDates[place.name] && (
+                      <button type="button" onClick={() => addToCalendar(place.name, tentativeDates[place.name])}
+                        style={{ padding: "8px 14px", borderRadius: 10, border: "none", background: "#0f172a", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+                        + Agenda
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Comentarios */}
+                <div style={{ marginTop: 12 }}>
+                  <button type="button" onClick={() => setOpenComments(prev => ({ ...prev, [place.name]: !prev[place.name] }))}
+                    style={{ background: "none", border: "none", color: "#64748b", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
+                    💬 {comments[place.name]?.length || 0} comentario{(comments[place.name]?.length || 0) !== 1 ? "s" : ""}
+                    <span style={{ fontSize: 11 }}>{openComments[place.name] ? "▲" : "▼"}</span>
+                  </button>
+                  {openComments[place.name] && (
+                    <div style={{ marginTop: 10 }}>
+                      {(comments[place.name] || []).map((c, i) => (
+                        <div key={i} style={{ background: "#f8fafc", borderRadius: 14, padding: "10px 12px", marginBottom: 8, border: "1px solid #e2e8f0" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                            <span style={{ fontWeight: 700, fontSize: 13, color: "#334155" }}>👤 {c.person}</span>
+                            <span style={{ fontSize: 11, color: "#94a3b8" }}>{c.timestamp}</span>
+                          </div>
+                          <p style={{ margin: "0 0 8px", fontSize: 14, color: "#475569", lineHeight: 1.5 }}>{c.text}</p>
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            {REACTIONS.map(emoji => {
+                              const arr = c.reactions[emoji] || [];
+                              const active = arr.includes(currentPerson!);
+                              return (
+                                <button key={emoji} type="button" onClick={() => addReaction(place.name, i, emoji)}
+                                  style={{ padding: "3px 8px", borderRadius: 999, border: active ? "1px solid #0f172a" : "1px solid #e2e8f0", background: active ? "#f1f5f9" : "#fff", fontSize: 13, cursor: "pointer", fontWeight: active ? 700 : 400 }}>
+                                  {emoji}{arr.length > 0 ? ` ${arr.length}` : ""}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                        <input value={commentDraft[place.name] || ""} onChange={(e) => setCommentDraft(prev => ({ ...prev, [place.name]: e.target.value }))}
+                          onKeyDown={(e) => { if (e.key === "Enter") addComment(place.name); }}
+                          placeholder="Escribí tu comentario..."
+                          style={{ flex: 1, padding: "9px 12px", borderRadius: 12, border: "1px solid #dbe3ee", fontSize: 13, outline: "none", background: "#f8fafc" }} />
+                        <button type="button" onClick={() => addComment(place.name)}
+                          style={{ padding: "9px 16px", borderRadius: 12, border: "none", background: "#0f172a", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                          Enviar
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </article>
@@ -1343,62 +1339,23 @@ const filtered = useMemo(() => {
                           🚗 {sp.distance} min · 📍 {sp.address}
                         </div>
 
-                        {/* Botones de interacción */}
-                        <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-                          <button
-                            type="button"
-                            onClick={() => toggleShopping("interested")}
-                            style={{
-                              flex: 1,
-                              minWidth: 90,
-                              padding: "10px 8px",
-                              borderRadius: 14,
-                              border: state.interested ? "2px solid #f97316" : "1px solid #e2e8f0",
-                              background: state.interested ? "#fff7ed" : "#f8fafc",
-                              color: state.interested ? "#f97316" : "#64748b",
-                              fontSize: 13,
-                              fontWeight: 700,
-                              cursor: "pointer",
-                            }}
-                          >
-                            ❤️ Me interesa
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => toggleShopping("wantToGo")}
-                            style={{
-                              flex: 1,
-                              minWidth: 90,
-                              padding: "10px 8px",
-                              borderRadius: 14,
-                              border: state.wantToGo ? "2px solid #6366f1" : "1px solid #e2e8f0",
-                              background: state.wantToGo ? "#eef2ff" : "#f8fafc",
-                              color: state.wantToGo ? "#6366f1" : "#64748b",
-                              fontSize: 13,
-                              fontWeight: 700,
-                              cursor: "pointer",
-                            }}
-                          >
-                            🛍 Quiero ir
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => toggleShopping("visited")}
-                            style={{
-                              flex: 1,
-                              minWidth: 90,
-                              padding: "10px 8px",
-                              borderRadius: 14,
-                              border: state.visited ? "2px solid #22c55e" : "1px solid #e2e8f0",
-                              background: state.visited ? "#f0fdf4" : "#f8fafc",
-                              color: state.visited ? "#22c55e" : "#64748b",
-                              fontSize: 13,
-                              fontWeight: 700,
-                              cursor: "pointer",
-                            }}
-                          >
-                            ✅ Visitado
-                          </button>
+                        {/* Estado de planificación — flujo progresivo */}
+                        <div style={{ marginBottom: 14 }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Mi estado</div>
+                          <div style={{ display: "flex", gap: 6 }}>
+                            {([["interested","❤️","Me interesa","#f97316","#fff7ed"],["wantToGo","🛍","Lo visito","#6366f1","#eef2ff"],["visited","✅","Ya fui","#22c55e","#f0fdf4"]] as const).map(([key, emoji, label, color, bg]) => {
+                              const active = !!(state as Record<string, boolean>)[key];
+                              return (
+                                <button key={key} type="button" onClick={() => toggleShopping(key as "interested"|"wantToGo"|"visited")}
+                                  style={{ flex: 1, padding: "10px 6px", borderRadius: 14, border: active ? `2px solid ${color}` : "1px solid #e2e8f0", background: active ? bg : "#f8fafc", color: active ? color : "#94a3b8", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                                  <span style={{ fontSize: 18 }}>{emoji}</span>
+                                  <span>{label}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {state.visited && <div style={{ marginTop: 8, padding: "6px 12px", borderRadius: 10, background: "#f0fdf4", border: "1px solid #86efac", fontSize: 12, color: "#16a34a", fontWeight: 700, textAlign: "center" }}>✓ Visitado por {currentPerson}</div>}
+                          {state.wantToGo && !state.visited && <div style={{ marginTop: 8, padding: "6px 12px", borderRadius: 10, background: "#eef2ff", border: "1px solid #c7d2fe", fontSize: 12, color: "#6366f1", fontWeight: 700, textAlign: "center" }}>📋 En tu lista de visitas</div>}
                         </div>
 
                         <a
@@ -1430,6 +1387,83 @@ const filtered = useMemo(() => {
           </section>
         )}
       </div>
+
+      {/* Section transition modal */}
+      {showSectionModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(15,23,42,0.7)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: "#fff", borderRadius: 28, padding: "40px 32px", maxWidth: 400, width: "100%", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
+            <h2 style={{ margin: "0 0 10px", fontSize: 24, fontWeight: 800 }}>¡Votos registrados!</h2>
+            <p style={{ color: "#64748b", fontSize: 15, marginBottom: 28, lineHeight: 1.6 }}>
+              Tus votos de atracciones ya están guardados.<br/>
+              ¿Querés revisar ahora los <strong>lugares de compras</strong>?
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button type="button" onClick={() => setShowSectionModal(false)}
+                style={{ flex: 1, padding: "14px", borderRadius: 16, border: "1px solid #e2e8f0", background: "#f8fafc", color: "#64748b", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+                Seguir en Atracciones
+              </button>
+              <button type="button" onClick={() => { setSection("compras"); setShowSectionModal(false); playSound("section"); }}
+                style={{ flex: 1, padding: "14px", borderRadius: 16, border: "none", background: "#0f172a", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+                🛍️ Ver Compras
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating buttons */}
+      <div style={{ position: "fixed", bottom: 28, right: 28, zIndex: 1000, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12 }}>
+        {/* WhatsApp */}
+        <a href={WHATSAPP_GROUP} target="_blank" rel="noreferrer"
+          style={{ display: "flex", alignItems: "center", gap: 8, padding: "13px 20px", borderRadius: 20, background: "#25D366", color: "#fff", textDecoration: "none", fontSize: 14, fontWeight: 700, boxShadow: "0 4px 20px rgba(37,211,102,0.35)" }}>
+          <span style={{ fontSize: 18 }}>💬</span> WhatsApp
+        </a>
+        {/* Submit */}
+        {submitted ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 22px", borderRadius: 20, background: "#f0fdf4", border: "1px solid #86efac", color: "#16a34a", fontSize: 14, fontWeight: 700, boxShadow: "0 4px 24px rgba(0,0,0,0.12)" }}>
+            ✅ Votos enviados
+          </div>
+        ) : (
+          <button type="button" onClick={submitVotes}
+            disabled={submitting || Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length === 0}
+            style={{
+              padding: "16px 28px", borderRadius: 20, border: "none",
+              background: Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length === 0 ? "#94a3b8" : "#f97316",
+              color: "#fff", fontSize: 15, fontWeight: 700,
+              cursor: Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length === 0 ? "not-allowed" : "pointer",
+              boxShadow: Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length === 0 ? "none" : "0 4px 24px rgba(249,115,22,0.4)",
+              display: "flex", alignItems: "center", gap: 10,
+            }}>
+            {submitting ? "Enviando..." : (
+              <>
+                <span>📤 Enviar mis votos</span>
+                {Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length > 0 && (
+                  <span style={{ background: "rgba(255,255,255,0.25)", borderRadius: 999, padding: "2px 10px", fontSize: 13 }}>
+                    {Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length}
+                  </span>
+                )}
+              </>
+            )}
+          </button>
+        )}
+      </div>
+      {/* Bottom nav bar - fixed tabs */}
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 900, background: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)", borderTop: "1px solid #e2e8f0", display: "flex", padding: "8px 0 max(8px, env(safe-area-inset-bottom))" }}>
+        {([["atracciones","🗺️","Atracciones"],["compras","🛍️","Compras"]] as const).map(([item, emoji, label]) => {
+          const active = section === item;
+          return (
+            <button key={item} type="button" onClick={() => { setSection(item); playSound("section"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 0", border: "none", background: "none", cursor: "pointer" }}>
+              <span style={{ fontSize: 22 }}>{emoji}</span>
+              <span style={{ fontSize: 11, fontWeight: active ? 800 : 500, color: active ? "#0f172a" : "#94a3b8" }}>{label}</span>
+              {active && <div style={{ width: 20, height: 3, borderRadius: 999, background: "#0f172a" }} />}
+            </button>
+          );
+        })}
+      </div>
+      {/* Spacer for bottom nav */}
+      <div style={{ height: 70 }} />
     </main>
   );
 }
