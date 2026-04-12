@@ -14,6 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "San Diego Family Trip",
+  manifest: "/manifest.json",
+  themeColor: "#0f172a",
   description:
     "Explorá, votá y elegí las mejores experiencias para nuestro viaje a San Diego.",
   openGraph: {
