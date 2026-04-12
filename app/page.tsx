@@ -490,19 +490,22 @@ const shoppingPlaces: ShoppingPlace[] = [
 ];
 
 export default function Page() {
+  const [currentPerson, setCurrentPerson] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [query, setQuery] = useState("");
-  const [votes, setVotes] = useState<Record<string, Record<string, boolean>>>(
-    {}
-  );
-  const [finalSelection, setFinalSelection] = useState<Record<string, boolean>>(
-    {}
-  );
+  const [votes, setVotes] = useState<Record<string, Record<string, boolean>>>({});
+  const [finalSelection, setFinalSelection] = useState<Record<string, boolean>>({});
   const [section, setSection] = useState<"atracciones" | "compras">("atracciones");
-const [shoppingQuery, setShoppingQuery] = useState("");
-const [shoppingFilter, setShoppingFilter] = useState<
-  "all" | "nearby" | "cheap" | "recommended"
->("recommended");
-const [shoppingState, setShoppingState] = useState<ShoppingState>({});
+  const [shoppingQuery, setShoppingQuery] = useState("");
+  const [shoppingFilter, setShoppingFilter] = useState<"all" | "nearby" | "cheap" | "recommended">("recommended");
+  const [shoppingState, setShoppingState] = useState<ShoppingState>({});
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
 
 const filtered = useMemo(() => {
   const q = query.trim().toLowerCase();
@@ -524,39 +527,91 @@ const filtered = useMemo(() => {
 }, [query, votes]);
 
   const SHEETS_URL = "https://script.google.com/macros/s/AKfycbzGD3_66bqe2JILU-72Q9_MJX6UoIIE66jQHoKIoyTi9kAqz1a0ZHwWdhO6uWDF6NMu7w/exec";
-  const toggleVote = async (placeName: string, person: string) => {
-    const newValue = !(votes[placeName] || {})[person];
 
-  setVotes((prev) => ({
-    ...prev,
-    [placeName]: {
-      ...(prev[placeName] || {}),
-      [person]: newValue,
-    },
-  }));
+  const toggleVote = (placeName: string) => {
+    if (!currentPerson) return;
+    const newValue = !(votes[placeName] || {})[currentPerson];
+    setVotes((prev) => ({
+      ...prev,
+      [placeName]: { ...(prev[placeName] || {}), [currentPerson]: newValue },
+    }));
+    if (newValue) {
+      showToast(`✅ Voto registrado: ${placeName}`);
+    } else {
+      showToast(`↩️ Voto removido: ${placeName}`);
+    }
+  };
 
-  try {
-    await fetch(SHEETS_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8",
-      },
-      body: JSON.stringify({
-        place: placeName,
-        person,
-        vote: newValue,
-        final: !!finalSelection[placeName],
-      }),
-    });
-  } catch (error) {
-    console.error("Error guardando voto:", error);
-  }
-};
+  const submitVotes = async () => {
+    if (!currentPerson) return;
+    setSubmitting(true);
+    try {
+      const votedPlaces = places.filter((p) => (votes[p.name] || {})[currentPerson]);
+      await Promise.all(
+        votedPlaces.map((p) =>
+          fetch(SHEETS_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({
+              place: p.name,
+              person: currentPerson,
+              vote: true,
+              final: !!finalSelection[p.name],
+            }),
+          })
+        )
+      );
+      setSubmitted(true);
+      showToast(`🎉 ¡Votos de ${currentPerson} enviados con éxito!`);
+    } catch (error) {
+      console.error("Error enviando votos:", error);
+      showToast("❌ Error al enviar. Intentá de nuevo.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const voteCount = (placeName: string) =>
     Object.values(votes[placeName] || {}).filter(Boolean).length;
 
   const finalList = places.filter((place) => finalSelection[place.name]);
+
+  // ── Pantalla de selección de persona ───────────────────────
+  if (!currentPerson) {
+    return (
+      <main style={{ minHeight: "100vh", background: "#f6f7fb", color: "#0f172a", fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif', display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 28, padding: "48px 40px", boxShadow: "0 8px 40px rgba(15,23,42,0.10)", maxWidth: 480, width: "100%", textAlign: "center" }}>
+          <div style={{ fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: "#64748b", marginBottom: 10, fontWeight: 700 }}>San Diego Family Trip</div>
+          <h1 style={{ fontSize: 32, fontWeight: 800, margin: "0 0 10px" }}>¿Quién sos?</h1>
+          <p style={{ color: "#64748b", fontSize: 15, marginBottom: 32 }}>Seleccioná tu nombre para registrar tus votos y preferencias.</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {people.map((person) => (
+              <button
+                key={person}
+                type="button"
+                onClick={() => setCurrentPerson(person)}
+                style={{
+                  padding: "18px 12px",
+                  borderRadius: 18,
+                  border: "1px solid #e2e8f0",
+                  background: "#f8fafc",
+                  color: "#0f172a",
+                  fontSize: 16,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                }}
+                onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.background = "#0f172a"; (e.target as HTMLButtonElement).style.color = "#fff"; }}
+                onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.background = "#f8fafc"; (e.target as HTMLButtonElement).style.color = "#0f172a"; }}
+              >
+                {person}
+              </button>
+            ))}
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main
@@ -568,6 +623,19 @@ const filtered = useMemo(() => {
           'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
       }}
     >
+      {/* Toast notification */}
+      {toast && (
+        <div style={{
+          position: "fixed", top: 24, right: 24, zIndex: 9999,
+          background: "#0f172a", color: "#fff",
+          padding: "14px 22px", borderRadius: 16,
+          fontSize: 14, fontWeight: 700,
+          boxShadow: "0 8px 32px rgba(15,23,42,0.18)",
+          animation: "fadeIn 0.2s ease",
+        }}>
+          {toast}
+        </div>
+      )}
       <div
         style={{
           maxWidth: 1280,
@@ -746,23 +814,58 @@ const filtered = useMemo(() => {
                 Participantes con voto
               </div>
 
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                 {people.map((person) => (
                   <span
                     key={person}
                     style={{
                       padding: "8px 12px",
                       borderRadius: 999,
-                      background: "#f8fafc",
-                      border: "1px solid #e2e8f0",
+                      background: person === currentPerson ? "#0f172a" : "#f8fafc",
+                      border: person === currentPerson ? "1px solid #0f172a" : "1px solid #e2e8f0",
                       fontSize: 13,
-                      color: "#334155",
-                      fontWeight: 600,
+                      color: person === currentPerson ? "#fff" : "#334155",
+                      fontWeight: 700,
                     }}
                   >
-                    {person}
+                    {person === currentPerson ? `👤 ${person}` : person}
                   </span>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => { setCurrentPerson(null); setSubmitted(false); }}
+                  style={{ padding: "8px 12px", borderRadius: 999, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                >
+                  Cambiar
+                </button>
+              </div>
+
+              {/* Botón enviar votos */}
+              <div style={{ marginTop: 16 }}>
+                {submitted ? (
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 20px", borderRadius: 16, background: "#f0fdf4", border: "1px solid #86efac", color: "#16a34a", fontSize: 14, fontWeight: 700 }}>
+                    ✅ Votos de {currentPerson} enviados correctamente
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={submitVotes}
+                    disabled={submitting || Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length === 0}
+                    style={{
+                      padding: "12px 24px",
+                      borderRadius: 16,
+                      border: "none",
+                      background: submitting ? "#94a3b8" : "#0f172a",
+                      color: "#fff",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      cursor: submitting ? "not-allowed" : "pointer",
+                      opacity: Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length === 0 ? 0.5 : 1,
+                    }}
+                  >
+                    {submitting ? "Enviando..." : `Enviar mis votos (${Object.keys(votes).filter(p => (votes[p] || {})[currentPerson!]).length} lugares)`}
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -1015,7 +1118,7 @@ const filtered = useMemo(() => {
                         <input
                           type="checkbox"
                           checked={!!(votes[place.name] || {})[person]}
-                          onChange={() => toggleVote(place.name, person)}
+                          onChange={() => toggleVote(place.name)}
                         />
                         {person}
                       </label>
