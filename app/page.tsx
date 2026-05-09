@@ -518,7 +518,10 @@ export default function Page() {
   const [query, setQuery] = useState("");
   const [votes, setVotes] = useState<Record<string, Record<string, boolean>>>({});
   const [finalSelection, setFinalSelection] = useState<Record<string, boolean>>({});
-  const [section, setSection] = useState<"atracciones" | "compras">("atracciones");
+  const [section, setSection] = useState<"atracciones" | "compras" | "itinerario">("atracciones");
+  const [liveVotes, setLiveVotes] = useState<Record<string, string[]>>({});
+  const [loadingVotes, setLoadingVotes] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<string>("");
   const [shoppingQuery, setShoppingQuery] = useState("");
   const [shoppingFilter, setShoppingFilter] = useState<"all" | "nearby" | "cheap" | "recommended">("recommended");
   const [shoppingState, setShoppingState] = useState<ShoppingState>({});
@@ -556,6 +559,39 @@ export default function Page() {
       return place.weekendWarning;
     }
     return `✅ Entre semana — ${place.bestTime}`;
+  };
+
+  // Fetch live votes from Google Sheets
+  const fetchLiveVotes = async () => {
+    setLoadingVotes(true);
+    try {
+      const res = await fetch(SHEETS_URL + "?action=getVotes");
+      const data = await res.json();
+      if (data.votes) {
+        setLiveVotes(data.votes);
+        setLastUpdated(new Date().toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }));
+      } else {
+        // Fallback: use local votes from app state
+        const local: Record<string, string[]> = {};
+        places.forEach(p => {
+          const voters = people.filter(person => (votes[p.name] || {})[person]);
+          if (voters.length > 0) local[p.name] = voters;
+        });
+        setLiveVotes(local);
+        setLastUpdated(new Date().toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }));
+      }
+    } catch {
+      // Fallback to local state
+      const local: Record<string, string[]> = {};
+      places.forEach(p => {
+        const voters = people.filter(person => (votes[p.name] || {})[person]);
+        if (voters.length > 0) local[p.name] = voters;
+      });
+      setLiveVotes(local);
+      setLastUpdated(new Date().toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }));
+    } finally {
+      setLoadingVotes(false);
+    }
   };
 
   const addToCalendar = (placeName: string, date: string) => {
@@ -784,12 +820,16 @@ const filtered = useMemo(() => {
           </div>
 
           {/* Section switcher */}
-          <div style={{ display: "flex", gap: 0, marginTop: 20, marginBottom: 20, background: "#f1f5f9", borderRadius: 20, padding: 4, width: "fit-content" }}>
-            {([["atracciones", "🗺️ Atracciones"], ["compras", "🛍️ Compras"]] as const).map(([item, label]) => {
+          <div style={{ display: "flex", gap: 0, marginTop: 20, marginBottom: 20, background: "#f1f5f9", borderRadius: 20, padding: 4, flexWrap: "wrap" }}>
+            {([["atracciones", "🗺️ Atracciones"], ["compras", "🛍️ Compras"], ["itinerario", "🗓 Itinerario"]] as const).map(([item, label]) => {
               const active = section === item;
               return (
-                <button key={item} type="button" onClick={() => { setSection(item); playSound("section"); }}
-                  style={{ padding: "12px 24px", borderRadius: 16, border: "none", background: active ? "#0f172a" : "transparent", color: active ? "#fff" : "#64748b", fontSize: 15, fontWeight: 700, cursor: "pointer", transition: "all 0.2s", boxShadow: active ? "0 2px 8px rgba(15,23,42,0.18)" : "none" }}>
+                <button key={item} type="button" onClick={() => {
+                  setSection(item as "atracciones" | "compras" | "itinerario");
+                  playSound("section");
+                  if (item === "itinerario") fetchLiveVotes();
+                }}
+                  style={{ padding: "12px 20px", borderRadius: 16, border: "none", background: active ? "#0f172a" : "transparent", color: active ? "#fff" : "#64748b", fontSize: 14, fontWeight: 700, cursor: "pointer", transition: "all 0.2s", boxShadow: active ? "0 2px 8px rgba(15,23,42,0.18)" : "none", whiteSpace: "nowrap" }}>
                   {label}
                 </button>
               );
@@ -1437,6 +1477,113 @@ const filtered = useMemo(() => {
         )}
       </div>
 
+        {section === "itinerario" && (() => {
+          const voteSource = Object.keys(liveVotes).length > 0 ? liveVotes :
+            Object.fromEntries(places.map(p => [p.name, people.filter(person => (votes[p.name] || {})[person])]));
+          const ranked = [...places].map(p => ({ ...p, voters: voteSource[p.name] || [] })).filter(p => p.voters.length > 0).sort((a, b) => b.voters.length - a.voters.length);
+          const dateMap: Record<string,string> = {"vie 15":"2026-05-15","sáb 16":"2026-05-16","dom 17":"2026-05-17","lun 18":"2026-05-18","mar 19":"2026-05-19","mié 20":"2026-05-20","jue 21":"2026-05-21","vie 22":"2026-05-22","sáb 23":"2026-05-23","dom 24":"2026-05-24","lun 25":"2026-05-25"};
+          const reverseDate: Record<string,string> = Object.fromEntries(Object.entries(dateMap).map(([k,v]) => [v,k]));
+          const scheduled = ranked.filter(p => tentativeDates[p.name]);
+          const unscheduled = ranked.filter(p => !tentativeDates[p.name]);
+          const byDay: Record<string, typeof scheduled> = {};
+          scheduled.forEach(p => { const day = reverseDate[tentativeDates[p.name]] || tentativeDates[p.name]; if (!byDay[day]) byDay[day] = []; byDay[day].push(p); });
+          const totalVoters = new Set(ranked.flatMap(p => p.voters)).size;
+          return (
+            <div style={{ paddingBottom: 20 }}>
+              <div style={{ background: "linear-gradient(135deg, #0f172a, #1e3a5f)", borderRadius: 20, padding: 20, marginBottom: 20 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.15em", fontWeight: 700, marginBottom: 6 }}>San Diego · 15–25 Mayo 2026</div>
+                    <h2 style={{ margin: "0 0 6px", fontSize: 24, fontWeight: 800, color: "#fff" }}>🗓 Itinerario del grupo</h2>
+                    <p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,0.6)" }}>{ranked.length} lugares votados · {totalVoters} participantes activos{lastUpdated && ` · Actualizado ${lastUpdated}`}</p>
+                  </div>
+                  <button type="button" onClick={fetchLiveVotes} style={{ padding: "8px 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.8)", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+                    {loadingVotes ? "⏳" : "🔄 Actualizar"}
+                  </button>
+                </div>
+                <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
+                  {([["✅ Agendados", scheduled.length.toString()],["📋 Sin agendar", unscheduled.length.toString()],["👥 Participantes", totalVoters+"/6"]]).map(([label, val]) => (
+                    <div key={label} style={{ background: "rgba(255,255,255,0.1)", borderRadius: 12, padding: "8px 14px", textAlign: "center" }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>{val}</div>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>{label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {loadingVotes ? (
+                <div style={{ textAlign: "center", padding: 40, color: "#64748b" }}>
+                  <div style={{ fontSize: 32, marginBottom: 10 }}>⏳</div>
+                  <div style={{ fontWeight: 700 }}>Cargando votos en tiempo real...</div>
+                </div>
+              ) : (
+                <>
+                  {TRIP_DAYS.filter(day => byDay[day]).map(day => {
+                    const isWeekend = day.startsWith("sáb") || day.startsWith("dom");
+                    return (
+                      <div key={day} style={{ marginBottom: 16 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                          <div style={{ background: isWeekend ? "#f97316" : "#0f172a", color: "#fff", borderRadius: 12, padding: "6px 14px", fontSize: 13, fontWeight: 800, whiteSpace: "nowrap" }}>{day} mayo</div>
+                          <div style={{ fontSize: 12, color: "#94a3b8", fontWeight: 600 }}>{isWeekend ? "🏖 Fin de semana" : "📅 Entre semana"}</div>
+                          <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
+                        </div>
+                        {(byDay[day] || []).map(place => (
+                          <div key={place.name} style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 16, padding: 14, marginBottom: 8, display: "flex", gap: 12, alignItems: "flex-start" }}>
+                            <img src={place.image} alt={place.name} onError={(e) => { (e.target as HTMLImageElement).src = "/images/placeholder.jpg"; }} style={{ width: 64, height: 64, borderRadius: 12, objectFit: "cover", flexShrink: 0 }} />
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 4 }}>
+                                <div style={{ fontWeight: 800, fontSize: 15, color: "#0f172a", lineHeight: 1.2 }}>{place.name}</div>
+                                <div style={{ display: "flex", gap: 3, flexShrink: 0 }}>
+                                  {place.voters.map((v: string) => (
+                                    <span key={v} style={{ width: 22, height: 22, borderRadius: "50%", background: "#0f172a", color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{v.charAt(0)}</span>
+                                  ))}
+                                </div>
+                              </div>
+                              <div style={{ fontSize: 12, color: "#64748b", marginBottom: 6 }}>⏱ {place.duration} · 💰 {place.adultMWR ? `MWR: ${place.adultMWR}` : place.adult}</div>
+                              <div style={{ fontSize: 11, color: isWeekend ? "#f97316" : "#16a34a", lineHeight: 1.5, fontWeight: 600 }}>{isWeekend ? place.weekendWarning.slice(0,80)+"..." : place.bestTime.split(".")[0]}</div>
+                              <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                                <a href={place.maps} target="_blank" rel="noreferrer" style={{ padding: "5px 10px", borderRadius: 8, background: "#0f172a", color: "#fff", fontSize: 11, fontWeight: 700, textDecoration: "none" }}>🗺 Maps</a>
+                                <a href={`maps://?q=${encodeURIComponent(place.address)}`} style={{ padding: "5px 10px", borderRadius: 8, background: "#f8fafc", border: "1px solid #e2e8f0", color: "#0f172a", fontSize: 11, fontWeight: 700, textDecoration: "none" }}>🍎 Apple</a>
+                                {tentativeDates[place.name] && (
+                                  <button type="button" onClick={() => addToCalendar(place.name, tentativeDates[place.name])} style={{ padding: "5px 10px", borderRadius: 8, background: "#fff7ed", border: "1px solid #fed7aa", color: "#f97316", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>📅 Agenda</button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                  {unscheduled.length > 0 && (
+                    <div style={{ marginTop: 20 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                        <div style={{ background: "#f1f5f9", color: "#64748b", borderRadius: 12, padding: "6px 14px", fontSize: 13, fontWeight: 800 }}>📋 Por agendar ({unscheduled.length})</div>
+                        <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
+                      </div>
+                      {unscheduled.map(place => (
+                        <div key={place.name} style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, marginBottom: 8, display: "flex", gap: 10, alignItems: "center" }}>
+                          <img src={place.image} alt={place.name} onError={(e) => { (e.target as HTMLImageElement).src = "/images/placeholder.jpg"; }} style={{ width: 48, height: 48, borderRadius: 10, objectFit: "cover", flexShrink: 0, opacity: 0.7 }} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 700, fontSize: 14, color: "#334155" }}>{place.name}</div>
+                            <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>{place.voters.length} voto{place.voters.length !== 1 ? "s" : ""} — {place.voters.join(", ")}</div>
+                          </div>
+                          <button type="button" onClick={() => { setSection("atracciones"); }} style={{ padding: "6px 12px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>+ Agendar</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {ranked.length === 0 && (
+                    <div style={{ textAlign: "center", padding: "60px 20px", color: "#94a3b8" }}>
+                      <div style={{ fontSize: 48, marginBottom: 12 }}>🗓</div>
+                      <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6, color: "#64748b" }}>Aún no hay votos registrados</div>
+                      <div style={{ fontSize: 14 }}>Ve a Atracciones y votá los lugares que querés visitar</div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })()}
+
       {/* Section transition modal */}
       {showSectionModal && (
         <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(15,23,42,0.7)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
@@ -1471,15 +1618,20 @@ const filtered = useMemo(() => {
         gap: 12,
       }}>
         {/* Izquierda — tabs de sección */}
-        <div style={{ display: "flex", gap: 4, background: "#f1f5f9", borderRadius: 16, padding: 3 }}>
-          {([["atracciones","🗺️","Atracciones"],["compras","🛍️","Compras"]] as const).map(([item, emoji, label]) => {
+        <div style={{ display: "flex", gap: 3, background: "#f1f5f9", borderRadius: 16, padding: 3 }}>
+          {([["atracciones","🗺️","Atracciones"],["compras","🛍️","Compras"],["itinerario","🗓","Itinerario"]] as const).map(([item, emoji, label]) => {
             const active = section === item;
             return (
               <button key={item} type="button"
-                onClick={() => { setSection(item); playSound("section"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1, padding: "6px 14px", borderRadius: 13, border: "none", background: active ? "#0f172a" : "transparent", color: active ? "#fff" : "#94a3b8", cursor: "pointer", minWidth: 70 }}>
-                <span style={{ fontSize: 18 }}>{emoji}</span>
-                <span style={{ fontSize: 10, fontWeight: active ? 800 : 500 }}>{label}</span>
+                onClick={() => {
+                  setSection(item as "atracciones" | "compras" | "itinerario");
+                  playSound("section");
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                  if (item === "itinerario") fetchLiveVotes();
+                }}
+                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1, padding: "6px 10px", borderRadius: 13, border: "none", background: active ? "#0f172a" : "transparent", color: active ? "#fff" : "#94a3b8", cursor: "pointer", minWidth: 58 }}>
+                <span style={{ fontSize: 16 }}>{emoji}</span>
+                <span style={{ fontSize: 9, fontWeight: active ? 800 : 500 }}>{label}</span>
               </button>
             );
           })}
