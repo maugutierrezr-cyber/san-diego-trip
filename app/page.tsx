@@ -1478,108 +1478,188 @@ const filtered = useMemo(() => {
       </div>
 
         {section === "itinerario" && (() => {
+          // Votos en tiempo real
           const voteSource = Object.keys(liveVotes).length > 0 ? liveVotes :
             Object.fromEntries(places.map(p => [p.name, people.filter(person => (votes[p.name] || {})[person])]));
-          const ranked = [...places].map(p => ({ ...p, voters: voteSource[p.name] || [] })).filter(p => p.voters.length > 0).sort((a, b) => b.voters.length - a.voters.length);
-          const dateMap: Record<string,string> = {"vie 15":"2026-05-15","sáb 16":"2026-05-16","dom 17":"2026-05-17","lun 18":"2026-05-18","mar 19":"2026-05-19","mié 20":"2026-05-20","jue 21":"2026-05-21","vie 22":"2026-05-22","sáb 23":"2026-05-23","dom 24":"2026-05-24","lun 25":"2026-05-25"};
-          const reverseDate: Record<string,string> = Object.fromEntries(Object.entries(dateMap).map(([k,v]) => [v,k]));
-          const scheduled = ranked.filter(p => tentativeDates[p.name]);
-          const unscheduled = ranked.filter(p => !tentativeDates[p.name]);
-          const byDay: Record<string, typeof scheduled> = {};
-          scheduled.forEach(p => { const day = reverseDate[tentativeDates[p.name]] || tentativeDates[p.name]; if (!byDay[day]) byDay[day] = []; byDay[day].push(p); });
-          const totalVoters = new Set(ranked.flatMap(p => p.voters)).size;
+          const getVoters = (name: string) => voteSource[name] || [];
+          const totalVoters = new Set(places.flatMap(p => getVoters(p.name))).size;
+
+          // Itinerario fijo basado en votos y lógica del viaje
+          type DayPlan = { day: string; date: string; emoji: string; theme: string; weekend: boolean;
+            activities: { time: string; emoji: string; name: string; detail: string; maps?: string; mwr?: string; placeName?: string }[] };
+
+          const itinerary: DayPlan[] = [
+            { day: "DÍA 1", date: "Viernes 15 Mayo", emoji: "🛬", theme: "Llegada — Instalación", weekend: true,
+              activities: [
+                { time: "18:30", emoji: "✈️", name: "Llegada a San Diego (SAN)", detail: "Copa Airlines CM-341 · Carmel Valley 20 min en carro" },
+                { time: "20:00", emoji: "🏠", name: "Check-in en hospedaje", detail: "1625 Via Madrina · Compras básicas en Target (8 min)", maps: "https://www.google.com/maps/search/?api=1&query=1625+Via+Madrina+San+Diego" },
+                { time: "21:00", emoji: "🍽️", name: "Cena de bienvenida", detail: "Little Italy o restaurante cercano al hospedaje" },
+              ]},
+            { day: "DÍA 2", date: "Sábado 16 Mayo", emoji: "🦁", theme: "San Diego Zoo", weekend: true,
+              activities: [
+                { time: "8:30", emoji: "🌅", name: "Salida del hospedaje", detail: "Desayuno rápido · 20 min en carro" },
+                { time: "9:00–15:00", emoji: "🦁", name: "San Diego Zoo", detail: "5/6 votos · MWR: $64.50 adulto / $56.25 niño · Teleférico, pandas, jirafas", maps: "https://www.google.com/maps/search/?api=1&query=San+Diego+Zoo", mwr: "$64.50", placeName: "San Diego Zoo" },
+                { time: "15:30", emoji: "🌿", name: "Balboa Park", detail: "Jardines y arquitectura · Gratuito · 5 min del zoo", maps: "https://www.google.com/maps/search/?api=1&query=Balboa+Park", placeName: "Balboa Park" },
+                { time: "17:30", emoji: "🛍️", name: "Seaport Village", detail: "Paseo frente al mar · Souvenirs y snacks", maps: "https://www.google.com/maps/search/?api=1&query=Seaport+Village+San+Diego", placeName: "Seaport Village" },
+                { time: "20:00", emoji: "🌆", name: "Cena en Little Italy", detail: "Eric, Erika y Felipe lo votaron · Ambiente animado en sábado", maps: "https://www.google.com/maps/search/?api=1&query=Little+Italy+San+Diego", placeName: "Little Italy" },
+              ]},
+            { day: "DÍA 3", date: "Domingo 17 Mayo", emoji: "🌊", theme: "SeaWorld San Diego", weekend: true,
+              activities: [
+                { time: "9:30", emoji: "🌅", name: "Salida del hospedaje", detail: "SeaWorld abre 10am · 15 min en carro" },
+                { time: "10:00–16:00", emoji: "🐋", name: "SeaWorld San Diego", detail: "4/6 votos · MWR: $50.50 · Shows, montañas rusas, áreas infantiles", maps: "https://www.google.com/maps/search/?api=1&query=SeaWorld+San+Diego", mwr: "$50.50", placeName: "SeaWorld San Diego" },
+                { time: "17:00", emoji: "🏖️", name: "Coronado Beach (opcional)", detail: "3/6 votos · Ferry $5 desde downtown o 25 min en carro", maps: "https://www.google.com/maps/search/?api=1&query=Coronado+Beach", placeName: "Coronado Beach" },
+                { time: "20:00", emoji: "🍕", name: "Cena en Gaslamp Quarter", detail: "3/6 votos · Domingo menos concurrido que sábado", maps: "https://www.google.com/maps/search/?api=1&query=Gaslamp+Quarter+San+Diego", placeName: "Gaslamp Quarter" },
+              ]},
+            { day: "DÍA 4", date: "Lunes 18 Mayo", emoji: "⚓", theme: "USS Midway + Waterfront", weekend: false,
+              activities: [
+                { time: "10:00–13:00", emoji: "⚓", name: "USS Midway Museum", detail: "4/6 votos · MWR: $23 adulto / $17.50 joven · Militar activo: gratis", maps: "https://www.google.com/maps/search/?api=1&query=USS+Midway+Museum", mwr: "$23.00", placeName: "USS Midway Museum" },
+                { time: "13:30", emoji: "🚶", name: "Seaport Village → Harbor Walk", detail: "Almuerzo frente al mar · Vista al skyline" },
+                { time: "16:00", emoji: "🛍️", name: "Westfield UTC o One Paseo", detail: "Mauricio tiene ambos en lista · One Paseo a 5 min del hospedaje", maps: "https://www.google.com/maps/search/?api=1&query=Westfield+UTC+San+Diego" },
+                { time: "19:30", emoji: "🌅", name: "Sunset Cliffs", detail: "3/6 votos · Llegar 30 min antes del atardecer (~7:45pm)", maps: "https://www.google.com/maps/search/?api=1&query=Sunset+Cliffs+San+Diego", placeName: "Sunset Cliffs" },
+              ]},
+            { day: "DÍA 5", date: "Martes 19 Mayo", emoji: "🧱", theme: "LEGOLAND + Carlsbad", weekend: false,
+              activities: [
+                { time: "9:30", emoji: "🚗", name: "Salida hacia Carlsbad", detail: "45 min · LEGOLAND abre 10am" },
+                { time: "10:00–15:30", emoji: "🧱", name: "LEGOLAND California", detail: "3/6 votos · MWR: $69.25 · Ideal para el niño · Miniland, Dragon, agua", maps: "https://www.google.com/maps/search/?api=1&query=LEGOLAND+California", mwr: "$69.25", placeName: "LEGOLAND California" },
+                { time: "16:00–17:30", emoji: "🌸", name: "Carlsbad Flower Fields", detail: "3/6 votos · ¡Último mes de temporada! 5 min de LEGOLAND · ~$20", maps: "https://www.google.com/maps/search/?api=1&query=Carlsbad+Flower+Fields", placeName: "Carlsbad Flower Fields" },
+                { time: "19:30", emoji: "🍽️", name: "Cena en Carlsbad", detail: "Carlsbad Premium Outlets de paso si quieren compras rápidas" },
+              ]},
+            { day: "DÍA 6", date: "Miércoles 20 Mayo", emoji: "🦭", theme: "La Jolla — Naturaleza y Ciencia", weekend: false,
+              activities: [
+                { time: "8:00–10:00", emoji: "🦭", name: "La Jolla Cove", detail: "4/6 votos · Lobos marinos, acantilados · Ir temprano para mejor experiencia", maps: "https://www.google.com/maps/search/?api=1&query=La+Jolla+Cove", placeName: "La Jolla Cove" },
+                { time: "10:30–12:30", emoji: "🐟", name: "Birch Aquarium", detail: "3/6 votos · MWR: $28.75 adulto · 5 min de La Jolla · Manejable con bebé", maps: "https://www.google.com/maps/search/?api=1&query=Birch+Aquarium", mwr: "$28.75", placeName: "Birch Aquarium" },
+                { time: "13:00", emoji: "🍽️", name: "Almuerzo en La Jolla Village", detail: "Restaurantes frente al mar · La Jolla Shores para snacks y playa" },
+                { time: "15:30–18:00", emoji: "🌲", name: "Torrey Pines", detail: "4/6 votos · Senderos con vistas panorámicas · $15 parking", maps: "https://www.google.com/maps/search/?api=1&query=Torrey+Pines", placeName: "Torrey Pines" },
+                { time: "18:30", emoji: "🛒", name: "Ross + Marshalls de regreso", detail: "Mauricio y Rosario los tienen en lista · Carmel Mountain" },
+              ]},
+            { day: "DÍA 7", date: "Jueves 21 Mayo", emoji: "🏖️", theme: "Playa y Old Town", weekend: false,
+              activities: [
+                { time: "9:00–13:00", emoji: "🏖️", name: "Coronado Beach", detail: "3/6 votos · Ferry $5 desde downtown · Hotel del Coronado icónico", maps: "https://www.google.com/maps/search/?api=1&query=Coronado+Beach", placeName: "Coronado Beach" },
+                { time: "14:30–17:00", emoji: "🇲🇽", name: "Old Town San Diego", detail: "3/6 votos · Historia mexicana · Bazaar del Mundo para artesanías", maps: "https://www.google.com/maps/search/?api=1&query=Old+Town+San+Diego", placeName: "Old Town San Diego" },
+                { time: "17:30", emoji: "🛍️", name: "Target + Marshalls", detail: "Mauricio tiene Target en lista · Ropa y artículos del hogar" },
+                { time: "20:00", emoji: "🌮", name: "Cena en Old Town", detail: "Restaurantes mexicanos muy buenos con buen precio" },
+              ]},
+            { day: "DÍA 8", date: "Viernes 22 Mayo", emoji: "🎢", theme: "Belmont Park + Mission Beach", weekend: false,
+              activities: [
+                { time: "10:00–14:00", emoji: "🏄", name: "Mission Beach + Belmont Park", detail: "3/6 votos · Parque frente al mar · Entrada gratis, rides por separado", maps: "https://www.google.com/maps/search/?api=1&query=Belmont+Park+San+Diego", placeName: "Belmont Park" },
+                { time: "15:30", emoji: "🛍️", name: "Outlets at San Clemente (opcional)", detail: "45 min al norte · 60+ marcas con vistas al Pacífico · Rosario ya conoce", maps: "https://www.google.com/maps/search/?api=1&query=Outlets+at+San+Clemente" },
+                { time: "19:00", emoji: "🌅", name: "Sunset Cliffs", detail: "Para quienes no pudieron el lunes · Entre semana menos gente", maps: "https://www.google.com/maps/search/?api=1&query=Sunset+Cliffs+San+Diego" },
+              ]},
+            { day: "DÍA 9", date: "Sábado 23 Mayo", emoji: "🏛️", theme: "Balboa Park + Gaslamp", weekend: true,
+              activities: [
+                { time: "9:30–13:00", emoji: "🌿", name: "Balboa Park", detail: "4/6 votos · Fleet Science IMAX: MWR $18.50 · Museos militares gratis", maps: "https://www.google.com/maps/search/?api=1&query=Balboa+Park", mwr: "$18.50", placeName: "Balboa Park" },
+                { time: "14:00–17:00", emoji: "🛍️", name: "Compras finales", detail: "Westfield UTC o Nordstrom Rack Carmel Mtn (8 min del hospedaje)", maps: "https://www.google.com/maps/search/?api=1&query=Nordstrom+Rack+Carmel+Mountain+San+Diego" },
+                { time: "19:00", emoji: "🍝", name: "Cena en Gaslamp Quarter", detail: "3/6 votos · Reservar con anticipación · Ambiente vibrante", maps: "https://www.google.com/maps/search/?api=1&query=Gaslamp+Quarter+San+Diego", placeName: "Gaslamp Quarter" },
+              ]},
+            { day: "DÍA 10", date: "Domingo 24 Mayo", emoji: "🏔️", theme: "Laguna Beach + Día libre", weekend: true,
+              activities: [
+                { time: "9:00–14:00", emoji: "🏖️", name: "Laguna Beach", detail: "3/6 votos · 1 hora al norte · Calas y paisajes premium · Combinar con Outlets", maps: "https://www.google.com/maps/search/?api=1&query=Laguna+Beach+CA", placeName: "Laguna Beach" },
+                { time: "15:00", emoji: "🛒", name: "Compras de regreso", detail: "Las Americas Premium Outlets (40 min) o Nordstrom Rack cercano", maps: "https://www.google.com/maps/search/?api=1&query=Las+Americas+Premium+Outlets" },
+                { time: "19:00", emoji: "🎉", name: "Cena de despedida", detail: "Little Italy o restaurante elegido por el grupo · Celebración final" },
+              ]},
+            { day: "DÍA 11", date: "Lunes 25 Mayo", emoji: "✈️", theme: "Regreso a Costa Rica", weekend: false,
+              activities: [
+                { time: "Mañana", emoji: "🌅", name: "Check-out del hospedaje", detail: "Equipaje listo · Últimas compras express en Target si es necesario" },
+                { time: "22:00", emoji: "✈️", name: "Vuelo Copa Airlines CM-850", detail: "SAN → PTY → SJO · Llegada martes 26 mayo 8:21am" },
+              ]},
+          ];
+
           return (
-            <div style={{ paddingBottom: 20 }}>
+            <div style={{ paddingBottom: 30 }}>
+              {/* Header */}
               <div style={{ background: "linear-gradient(135deg, #0f172a, #1e3a5f)", borderRadius: 20, padding: 20, marginBottom: 20 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div>
                     <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.15em", fontWeight: 700, marginBottom: 6 }}>San Diego · 15–25 Mayo 2026</div>
-                    <h2 style={{ margin: "0 0 6px", fontSize: 24, fontWeight: 800, color: "#fff" }}>🗓 Itinerario del grupo</h2>
-                    <p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,0.6)" }}>{ranked.length} lugares votados · {totalVoters} participantes activos{lastUpdated && ` · Actualizado ${lastUpdated}`}</p>
+                    <h2 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: "#fff" }}>🗓 Itinerario del grupo</h2>
+                    <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,0.6)" }}>
+                      Mauricio · Rosario · Eric · Erika · Felipe · Adrián
+                      {lastUpdated && ` · Votos actualizados ${lastUpdated}`}
+                    </p>
                   </div>
-                  <button type="button" onClick={fetchLiveVotes} style={{ padding: "8px 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.8)", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
-                    {loadingVotes ? "⏳" : "🔄 Actualizar"}
+                  <button type="button" onClick={fetchLiveVotes}
+                    style={{ padding: "8px 12px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.8)", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+                    {loadingVotes ? "⏳" : "🔄 Votos"}
                   </button>
                 </div>
-                <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
-                  {([["✅ Agendados", scheduled.length.toString()],["📋 Sin agendar", unscheduled.length.toString()],["👥 Participantes", totalVoters+"/6"]]).map(([label, val]) => (
-                    <div key={label} style={{ background: "rgba(255,255,255,0.1)", borderRadius: 12, padding: "8px 14px", textAlign: "center" }}>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>{val}</div>
-                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>{label}</div>
+                <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+                  {[["11 días", "🗓"], ["18 atracciones", "📍"], [totalVoters+"/6 participantes", "👥"]].map(([val, emoji]) => (
+                    <div key={val} style={{ background: "rgba(255,255,255,0.1)", borderRadius: 10, padding: "6px 12px", fontSize: 11, color: "rgba(255,255,255,0.8)", fontWeight: 700 }}>
+                      {emoji} {val}
                     </div>
                   ))}
                 </div>
               </div>
-              {loadingVotes ? (
-                <div style={{ textAlign: "center", padding: 40, color: "#64748b" }}>
-                  <div style={{ fontSize: 32, marginBottom: 10 }}>⏳</div>
-                  <div style={{ fontWeight: 700 }}>Cargando votos en tiempo real...</div>
-                </div>
-              ) : (
-                <>
-                  {TRIP_DAYS.filter(day => byDay[day]).map(day => {
-                    const isWeekend = day.startsWith("sáb") || day.startsWith("dom");
+
+              {/* Days */}
+              {itinerary.map((day) => (
+                <div key={day.day} style={{ marginBottom: 16 }}>
+                  {/* Day header */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                    <div style={{ background: day.weekend ? "#f97316" : "#0f172a", color: "#fff", borderRadius: 14, padding: "8px 14px", flexShrink: 0 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.7, textTransform: "uppercase", letterSpacing: "0.1em" }}>{day.day}</div>
+                      <div style={{ fontSize: 13, fontWeight: 800 }}>{day.date}</div>
+                    </div>
+                    <div style={{ background: day.weekend ? "#fff7ed" : "#f0fdf4", borderRadius: 10, padding: "6px 12px", fontSize: 12, fontWeight: 700, color: day.weekend ? "#f97316" : "#16a34a", flexShrink: 0 }}>
+                      {day.emoji} {day.theme}
+                    </div>
+                    <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
+                  </div>
+
+                  {/* Activities */}
+                  {day.activities.map((act, i) => {
+                    const voters = act.placeName ? getVoters(act.placeName) : [];
                     return (
-                      <div key={day} style={{ marginBottom: 16 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                          <div style={{ background: isWeekend ? "#f97316" : "#0f172a", color: "#fff", borderRadius: 12, padding: "6px 14px", fontSize: 13, fontWeight: 800, whiteSpace: "nowrap" }}>{day} mayo</div>
-                          <div style={{ fontSize: 12, color: "#94a3b8", fontWeight: 600 }}>{isWeekend ? "🏖 Fin de semana" : "📅 Entre semana"}</div>
-                          <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
+                      <div key={i} style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: "12px 14px", marginBottom: 6, display: "flex", gap: 10, alignItems: "flex-start" }}>
+                        {/* Time */}
+                        <div style={{ minWidth: 52, flexShrink: 0, textAlign: "center", paddingTop: 2 }}>
+                          <div style={{ fontSize: 16 }}>{act.emoji}</div>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: "#f97316", marginTop: 2, lineHeight: 1.2 }}>{act.time}</div>
                         </div>
-                        {(byDay[day] || []).map(place => (
-                          <div key={place.name} style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 16, padding: 14, marginBottom: 8, display: "flex", gap: 12, alignItems: "flex-start" }}>
-                            <img src={place.image} alt={place.name} onError={(e) => { (e.target as HTMLImageElement).src = "/images/placeholder.jpg"; }} style={{ width: 64, height: 64, borderRadius: 12, objectFit: "cover", flexShrink: 0 }} />
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 4 }}>
-                                <div style={{ fontWeight: 800, fontSize: 15, color: "#0f172a", lineHeight: 1.2 }}>{place.name}</div>
-                                <div style={{ display: "flex", gap: 3, flexShrink: 0 }}>
-                                  {place.voters.map((v: string) => (
-                                    <span key={v} style={{ width: 22, height: 22, borderRadius: "50%", background: "#0f172a", color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{v.charAt(0)}</span>
-                                  ))}
-                                </div>
+                        {/* Content */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
+                            <div style={{ fontWeight: 800, fontSize: 14, color: "#0f172a", lineHeight: 1.3 }}>{act.name}</div>
+                            {/* Voter avatars */}
+                            {voters.length > 0 && (
+                              <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
+                                {voters.slice(0,4).map((v: string) => (
+                                  <span key={v} style={{ width: 20, height: 20, borderRadius: "50%", background: "#0f172a", color: "#fff", fontSize: 8, fontWeight: 800, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                                    {v.charAt(0)}
+                                  </span>
+                                ))}
+                                {voters.length > 4 && <span style={{ fontSize: 10, color: "#94a3b8" }}>+{voters.length-4}</span>}
                               </div>
-                              <div style={{ fontSize: 12, color: "#64748b", marginBottom: 6 }}>⏱ {place.duration} · 💰 {place.adultMWR ? `MWR: ${place.adultMWR}` : place.adult}</div>
-                              <div style={{ fontSize: 11, color: isWeekend ? "#f97316" : "#16a34a", lineHeight: 1.5, fontWeight: 600 }}>{isWeekend ? place.weekendWarning.slice(0,80)+"..." : place.bestTime.split(".")[0]}</div>
-                              <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-                                <a href={place.maps} target="_blank" rel="noreferrer" style={{ padding: "5px 10px", borderRadius: 8, background: "#0f172a", color: "#fff", fontSize: 11, fontWeight: 700, textDecoration: "none" }}>🗺 Maps</a>
-                                <a href={`maps://?q=${encodeURIComponent(place.address)}`} style={{ padding: "5px 10px", borderRadius: 8, background: "#f8fafc", border: "1px solid #e2e8f0", color: "#0f172a", fontSize: 11, fontWeight: 700, textDecoration: "none" }}>🍎 Apple</a>
-                                {tentativeDates[place.name] && (
-                                  <button type="button" onClick={() => addToCalendar(place.name, tentativeDates[place.name])} style={{ padding: "5px 10px", borderRadius: 8, background: "#fff7ed", border: "1px solid #fed7aa", color: "#f97316", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>📅 Agenda</button>
-                                )}
-                              </div>
-                            </div>
+                            )}
                           </div>
-                        ))}
+                          <div style={{ fontSize: 12, color: "#64748b", marginTop: 3, lineHeight: 1.5 }}>{act.detail}</div>
+                          {/* MWR badge */}
+                          {act.mwr && (
+                            <div style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 5, padding: "2px 8px", borderRadius: 999, background: "#fff7ed", border: "1px solid #fed7aa" }}>
+                              <span style={{ fontSize: 10, fontWeight: 700, color: "#f97316" }}>⭐ MWR {act.mwr}</span>
+                            </div>
+                          )}
+                          {/* Maps buttons */}
+                          {act.maps && (
+                            <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                              <a href={act.maps} target="_blank" rel="noreferrer"
+                                style={{ padding: "4px 10px", borderRadius: 8, background: "#0f172a", color: "#fff", fontSize: 10, fontWeight: 700, textDecoration: "none" }}>🗺 Maps</a>
+                              <a href={`maps://?q=${encodeURIComponent(act.name + " San Diego")}`}
+                                style={{ padding: "4px 10px", borderRadius: 8, background: "#f8fafc", border: "1px solid #e2e8f0", color: "#0f172a", fontSize: 10, fontWeight: 700, textDecoration: "none" }}>🍎 Apple</a>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
-                  {unscheduled.length > 0 && (
-                    <div style={{ marginTop: 20 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                        <div style={{ background: "#f1f5f9", color: "#64748b", borderRadius: 12, padding: "6px 14px", fontSize: 13, fontWeight: 800 }}>📋 Por agendar ({unscheduled.length})</div>
-                        <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
-                      </div>
-                      {unscheduled.map(place => (
-                        <div key={place.name} style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, marginBottom: 8, display: "flex", gap: 10, alignItems: "center" }}>
-                          <img src={place.image} alt={place.name} onError={(e) => { (e.target as HTMLImageElement).src = "/images/placeholder.jpg"; }} style={{ width: 48, height: 48, borderRadius: 10, objectFit: "cover", flexShrink: 0, opacity: 0.7 }} />
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontWeight: 700, fontSize: 14, color: "#334155" }}>{place.name}</div>
-                            <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>{place.voters.length} voto{place.voters.length !== 1 ? "s" : ""} — {place.voters.join(", ")}</div>
-                          </div>
-                          <button type="button" onClick={() => { setSection("atracciones"); }} style={{ padding: "6px 12px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>+ Agendar</button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {ranked.length === 0 && (
-                    <div style={{ textAlign: "center", padding: "60px 20px", color: "#94a3b8" }}>
-                      <div style={{ fontSize: 48, marginBottom: 12 }}>🗓</div>
-                      <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6, color: "#64748b" }}>Aún no hay votos registrados</div>
-                      <div style={{ fontSize: 14 }}>Ve a Atracciones y votá los lugares que querés visitar</div>
-                    </div>
-                  )}
-                </>
-              )}
+                </div>
+              ))}
+
+              {/* Footer note */}
+              <div style={{ textAlign: "center", padding: "16px 0", fontSize: 11, color: "#94a3b8" }}>
+                Itinerario generado por la app · san-diego-trip-coral.vercel.app<br/>
+                Tocá 🔄 Votos para actualizar con los últimos votos del grupo
+              </div>
             </div>
           );
         })()}
