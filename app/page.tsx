@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 
 type Place = {
   name: string;
@@ -593,6 +593,29 @@ export default function Page() {
       setLoadingVotes(false);
     }
   };
+
+  // Auto-refresh votes every 2 minutes when on itinerario tab
+  const autoRefreshRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (section === "itinerario") {
+      fetchLiveVotes();
+      autoRefreshRef.current = setInterval(() => {
+        fetchLiveVotes();
+      }, 120000); // every 2 minutes
+    } else {
+      if (autoRefreshRef.current) {
+        clearInterval(autoRefreshRef.current);
+        autoRefreshRef.current = null;
+      }
+    }
+    return () => {
+      if (autoRefreshRef.current) {
+        clearInterval(autoRefreshRef.current);
+        autoRefreshRef.current = null;
+      }
+    };
+  }, [section]);
 
   const addToCalendar = (placeName: string, date: string) => {
     if (!date) return;
@@ -1577,10 +1600,17 @@ const filtered = useMemo(() => {
                       {lastUpdated && ` · Votos actualizados ${lastUpdated}`}
                     </p>
                   </div>
-                  <button type="button" onClick={fetchLiveVotes}
-                    style={{ padding: "8px 12px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.8)", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
-                    {loadingVotes ? "⏳" : "🔄 Votos"}
-                  </button>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+                    <button type="button" onClick={fetchLiveVotes}
+                      style={{ padding: "8px 12px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.8)", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+                      {loadingVotes ? "⏳ Actualizando..." : "🔄 Actualizar votos"}
+                    </button>
+                    {lastUpdated && (
+                      <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)" }}>
+                        Última actualización: {lastUpdated} · Auto cada 2 min
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
                   {[["11 días", "🗓"], ["18 atracciones", "📍"], [totalVoters+"/6 participantes", "👥"]].map(([val, emoji]) => (
